@@ -468,6 +468,61 @@ class TestIntegration(unittest.TestCase):
             "CSSの主要クラスがJSファイルで全く使われていません")
 
 
+class TestKaliRealWorldFixes(unittest.TestCase):
+    """Kali実機テストで判明した問題の修正（ローダー・未接続クライアント・フォント）"""
+
+    def test_enhanced_loader_has_guard_flag(self):
+        path = BASE_DIR / "http_data/js/kismet_enhanced_loader.js"
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("_enhancedInitialized", content)
+
+    def test_enhanced_loader_has_autostart(self):
+        path = BASE_DIR / "http_data/js/kismet_enhanced_loader.js"
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("autoStart", content)
+
+    def test_enhanced_loader_default_language_ja(self):
+        path = BASE_DIR / "http_data/js/kismet_enhanced_loader.js"
+        content = path.read_text(encoding="utf-8")
+        self.assertIn('localStorage.setItem("i18nextLng", "ja")', content)
+
+    def test_unassociated_refresh_interval(self):
+        path = BASE_DIR / "http_data/js/kismet_ui_unassociated.js"
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("REFRESH_INTERVAL", content)
+
+    def test_unassociated_setinterval_autorefresh(self):
+        path = BASE_DIR / "http_data/js/kismet_ui_unassociated.js"
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("setInterval", content)
+        self.assertIn("refreshData", content)
+
+    def test_unassociated_phy_ieee80211_endpoint(self):
+        path = BASE_DIR / "http_data/js/kismet_ui_unassociated.js"
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("phy-IEEE802.11", content)
+
+    def test_unassociated_filter_function(self):
+        path = BASE_DIR / "http_data/js/kismet_ui_unassociated.js"
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("isUnassociatedClient", content)
+
+    def test_unassociated_wifi_client_type(self):
+        path = BASE_DIR / "http_data/js/kismet_ui_unassociated.js"
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("Wi-Fi Client", content)
+
+    def test_unassociated_zero_bssid(self):
+        path = BASE_DIR / "http_data/js/kismet_ui_unassociated.js"
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("00:00:00:00:00:00", content)
+
+    def test_fonts_directory_exists(self):
+        fonts = BASE_DIR / "http_data/fonts"
+        self.assertTrue(fonts.is_dir(), "http_data/fonts/ が存在しません")
+        self.assertTrue((fonts / "jsglyph.ttf").is_file(), "jsglyph.ttf がありません")
+
+
 class TestSummary(unittest.TestCase):
     """テスト結果サマリー"""
 
