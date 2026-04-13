@@ -160,14 +160,26 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
 
     function startPoll() {
         pollTimer = window.setInterval(function () {
-            $.get(local_uri_prefix + "devices/by-mac/" + encodeURIComponent(macAddr) + "/devices.json")
-                .done(function (data) {
-                    if (data && data[0]) {
-                        var dbm = extractDbmFromDevice(data[0]);
-                        updateUi(dbm);
+            $.ajax({
+                url: local_uri_prefix + "devices/views/phy-IEEE802.11/devices.json",
+                method: "POST",
+                contentType: "application/x-www-form-urlencoded",
+                data: "json=" + encodeURIComponent(JSON.stringify({
+                    fields: ["kismet.device.base.macaddr", "kismet.device.base.signal"]
+                })),
+                success: function (data) {
+                    var arr = data.data || data;
+                    if (!Array.isArray(arr)) arr = [arr];
+                    for (var i = 0; i < arr.length; i++) {
+                        if (arr[i]["kismet.device.base.macaddr"] === macAddr) {
+                            var dbm = extractDbmFromDevice(arr[i]);
+                            updateUi(dbm);
+                            return;
+                        }
                     }
-                });
-        }, 3000);
+                }
+            });
+        }, rateSec * 1000);
     }
 
     function connectWs() {

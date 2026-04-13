@@ -452,23 +452,33 @@ function OpenUnassociatedPanel() {
                         }
                     },
                     { field: "channel", title: t("device_list.channel"), width: 80, hozAlign: "center" },
-                    { field: "last_seen_fmt", title: t("device_list.last_seen"), width: 170 }
+                    { field: "last_seen_fmt", title: t("device_list.last_seen"), width: 170 },
+                    {
+                        title: "\u96fb\u6ce2\u30e2\u30cb\u30bf\u30fc",
+                        width: 100,
+                        hozAlign: "center",
+                        headerSort: false,
+                        formatter: function () {
+                            return "<button type=\"button\" class=\"btn btn-monitor\" style=\"padding:2px 8px;background:#3498db;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:11px\">\u25b6 \u76e3\u8996</button>";
+                        },
+                        cellClick: function (e, cell) {
+                            e.stopPropagation();
+                            var d = cell.getRow().getData();
+                            console.log("[unassociated] monitor button clicked:", d.mac);
+                            if (typeof kismet_ui_signal_monitor !== "undefined") {
+                                kismet_ui_signal_monitor.OpenSignalMonitor(
+                                    d.device_key, d.mac,
+                                    (d.original_data && d.original_data["kismet.device.base.name"]) || "",
+                                    d.manuf
+                                );
+                            } else {
+                                console.error("[unassociated] kismet_ui_signal_monitor not available");
+                            }
+                        }
+                    }
                 ]
             });
-            // Tabulator 5: rowClick must be bound via .on() — constructor rowClick is ignored
-            unassocTable.on("rowClick", function (e, row) {
-                if ($(e.target).is("input") || $(e.target).closest("input, label, .tabulator-row-handle").length) {
-                    return;
-                }
-                var d = row.getData();
-                if (typeof kismet_ui_signal_monitor !== "undefined") {
-                    kismet_ui_signal_monitor.OpenSignalMonitor(
-                        d.device_key, d.mac,
-                        d.original_data["kismet.device.base.name"] || "",
-                        d.manuf
-                    );
-                }
-            });
+            // rowClick not used: Kismet's device list click opens Device Info; use monitor column instead.
         } else {
             console.warn("[unassociated] Tabulator not found, using HTML table");
             var ht = $("<table>", {
