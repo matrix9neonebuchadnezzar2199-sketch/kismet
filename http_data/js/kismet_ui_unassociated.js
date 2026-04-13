@@ -420,17 +420,20 @@ function OpenUnassociatedPanel() {
                     },
                     { field: "channel", title: t("device_list.channel"), width: 80, hozAlign: "center" },
                     { field: "last_seen_fmt", title: t("device_list.last_seen"), width: 170 }
-                ],
-                rowClick: function(e, row) {
-                    if ($(e.target).is("input")) return;
-                    var d = row.getData();
-                    if (typeof kismet_ui_signal_monitor !== "undefined") {
-                        kismet_ui_signal_monitor.OpenSignalMonitor(
-                            d.device_key, d.mac,
-                            d.original_data["kismet.device.base.name"] || "",
-                            d.manuf
-                        );
-                    }
+                ]
+            });
+            // Tabulator 5: rowClick must be bound via .on() — constructor rowClick is ignored
+            unassocTable.on("rowClick", function (e, row) {
+                if ($(e.target).is("input") || $(e.target).closest("input, label, .tabulator-row-handle").length) {
+                    return;
+                }
+                var d = row.getData();
+                if (typeof kismet_ui_signal_monitor !== "undefined") {
+                    kismet_ui_signal_monitor.OpenSignalMonitor(
+                        d.device_key, d.mac,
+                        d.original_data["kismet.device.base.name"] || "",
+                        d.manuf
+                    );
                 }
             });
         } else {
@@ -526,6 +529,15 @@ function renderHtmlTable(rows) {
         tr.append($("<td>").text(r.signal_dbm || "--"));
         tr.append($("<td>").text(r.channel));
         tr.append($("<td>").text(r.last_seen_fmt));
+        tr.css("cursor", "pointer").on("click", function () {
+            if (typeof kismet_ui_signal_monitor !== "undefined") {
+                kismet_ui_signal_monitor.OpenSignalMonitor(
+                    r.device_key, r.mac,
+                    r.original_data["kismet.device.base.name"] || "",
+                    r.manuf
+                );
+            }
+        });
         tbody.append(tr);
     });
 }
