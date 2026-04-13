@@ -66,11 +66,11 @@ function isUnassociatedClient(dev) {
 
 function extractSignal(dev) {
     var sig = dev["kismet.device.base.signal"];
-    if (sig && sig["kismet.common.signal.last_signal_dbm"] != null) {
-        return parseFloat(sig["kismet.common.signal.last_signal_dbm"]);
+    if (sig && sig["kismet.common.signal.last_signal"] != null) {
+        return parseFloat(sig["kismet.common.signal.last_signal"]);
     }
-    if (dev["kismet.common.signal.last_signal_dbm"] != null) {
-        return parseFloat(dev["kismet.common.signal.last_signal_dbm"]);
+    if (dev["kismet.common.signal.last_signal"] != null) {
+        return parseFloat(dev["kismet.common.signal.last_signal"]);
     }
     return null;
 }

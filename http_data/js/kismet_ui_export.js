@@ -48,9 +48,9 @@ exports.exportDeviceListCSV = function (data, options) {
         var name = od["kismet.device.base.name"] || od["kismet.device.base.commonname"] || "";
         var manuf = od["kismet.device.base.manuf"] || "";
         var typ = od["kismet.device.base.type"] || "";
-        var sig = od["kismet.common.signal.last_signal_dbm"];
+        var sig = od["kismet.common.signal.last_signal"];
         if (sig == null && od["kismet.device.base.signal"]) {
-            sig = od["kismet.device.base.signal"]["kismet.common.signal.last_signal_dbm"];
+            sig = od["kismet.device.base.signal"]["kismet.common.signal.last_signal"];
         }
         var ch = od["kismet.device.base.channel"] || "";
         var crypt = od["kismet.device.base.crypt"] || "";
@@ -103,8 +103,8 @@ exports.exportDeviceListPDF = function (data, options) {
         body.push([
             String(od["kismet.device.base.macaddr"] || ""),
             String(od["kismet.device.base.commonname"] || od["kismet.device.base.name"] || ""),
-            String(od["kismet.common.signal.last_signal_dbm"] != null
-                ? od["kismet.common.signal.last_signal_dbm"] : "")
+            String(od["kismet.common.signal.last_signal"] != null
+                ? od["kismet.common.signal.last_signal"] : "")
         ]);
     }
     doc.autoTable({

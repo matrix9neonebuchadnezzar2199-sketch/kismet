@@ -25,11 +25,11 @@ function hashDeviceKey(key) {
 
 function extractDbmFromDevice(dev) {
     if (!dev) return null;
-    var v = dev["kismet.common.signal.last_signal_dbm"];
+    var v = dev["kismet.common.signal.last_signal"];
     if (v != null) return parseFloat(v);
     var sig = dev["kismet.device.base.signal"];
-    if (sig && typeof sig === "object" && sig["kismet.common.signal.last_signal_dbm"] != null) {
-        return parseFloat(sig["kismet.common.signal.last_signal_dbm"]);
+    if (sig && typeof sig === "object" && sig["kismet.common.signal.last_signal"] != null) {
+        return parseFloat(sig["kismet.common.signal.last_signal"]);
     }
     return null;
 }
@@ -182,7 +182,7 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
                 monitor: macAddr,
                 request: Date.now(),
                 rate: rateSec,
-                fields: ["kismet.device.base.signal/kismet.common.signal.last_signal_dbm"]
+                fields: ["kismet.device.base.signal/kismet.common.signal.last_signal"]
             }));
         };
         ws.onmessage = function (ev) {
@@ -212,7 +212,7 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
                 monitor: macAddr,
                 request: Date.now(),
                 rate: rateSec,
-                fields: ["kismet.device.base.signal/kismet.common.signal.last_signal_dbm"]
+                fields: ["kismet.device.base.signal/kismet.common.signal.last_signal"]
             }));
         }
         if (pollTimer) {
