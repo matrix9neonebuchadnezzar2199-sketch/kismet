@@ -151,7 +151,7 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
 
     function startMock() {
         mockMode = true;
-        headerTitle = "[MOCK] " + headerTitle;
+        headerTitle = tfn("signal_monitor.mock_prefix") + headerTitle;
         mockTimer = window.setInterval(function () {
             var dbm = Math.round(-30 - Math.random() * 50);
             updateUi(dbm);

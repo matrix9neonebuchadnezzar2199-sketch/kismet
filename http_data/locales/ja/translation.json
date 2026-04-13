@@ -43,7 +43,11 @@
     "signal_strength": "電波強度 (dBm)",
     "last_detected": "最終検出時刻",
     "total_packets": "総パケット数",
-    "no_devices": "未接続クライアントは見つかりませんでした"
+    "no_devices": "未接続クライアントは見つかりませんでした",
+    "auto_refresh_interval": "{{sec}}秒ごとに更新",
+    "broadcast_label": "（ブロードキャスト）",
+    "pdf_heading": "Kismet 未接続クライアント",
+    "export_signal_hdr": "電波(dBm)"
   },
   "whitelist": {
     "title": "ホワイトリスト管理",
@@ -90,6 +94,7 @@
     "device_count": "{{visible}} / {{total}} 件表示中"
   },
   "signal_monitor": {
+    "mock_prefix": "[モック] ",
     "title": "信号モニター",
     "current_signal": "現在の信号強度",
     "signal_history": "信号強度推移（直近60秒）",
@@ -119,11 +124,19 @@
     "filter_note": "※信号フィルタ適用: ≧{{threshold}}dBm"
   },
   "settings": {
+    "dialog_title_prefix": "設定",
     "language": "言語設定",
-    "language_desc": "UIの表示言語を選択",
+    "language_desc": "UIの表示言語を選択してください（英語 / 日本語）。",
+    "lang_en": "英語",
+    "lang_ja": "日本語",
+    "whitelist_column_desc": "ホワイトリスト登録済みかどうか（アイコン表示）",
     "save": "保存",
     "reset": "リセット",
     "theme": "テーマ"
+  },
+  "highlight": {
+    "unassociated_probing": "未接続プローブ中クライアント",
+    "unknown_not_whitelisted": "ホワイトリスト未登録の端末"
   },
   "common": {
     "ok": "OK",
@@ -134,6 +147,10 @@
     "loading": "読み込み中...",
     "error": "エラー",
     "success": "成功",
-    "no_data": "データなし"
+    "no_data": "データなし",
+    "yes": "はい",
+    "no": "いいえ",
+    "jspdf_missing": "PDF用ライブラリ（jsPDF）が読み込まれていません。",
+    "select_rows_first": "一覧から1件以上選択してください。"
   }
 }

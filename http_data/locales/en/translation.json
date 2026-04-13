@@ -43,7 +43,11 @@
     "signal_strength": "Signal (dBm)",
     "last_detected": "Last Detected",
     "total_packets": "Total Packets",
-    "no_devices": "No unassociated clients found"
+    "no_devices": "No unassociated clients found",
+    "auto_refresh_interval": "Refresh every {{sec}}s",
+    "broadcast_label": "(broadcast)",
+    "pdf_heading": "Kismet — Unassociated clients",
+    "export_signal_hdr": "Signal(dBm)"
   },
   "whitelist": {
     "title": "Whitelist Management",
@@ -90,6 +94,7 @@
     "device_count": "Showing {{visible}} of {{total}} devices"
   },
   "signal_monitor": {
+    "mock_prefix": "[MOCK] ",
     "title": "Signal Monitor",
     "current_signal": "Current Signal",
     "signal_history": "Signal History (Last 60s)",
@@ -119,11 +124,19 @@
     "filter_note": "* Signal filter applied: ≧{{threshold}}dBm"
   },
   "settings": {
+    "dialog_title_prefix": "Settings",
     "language": "Language",
-    "language_desc": "Select UI display language",
+    "language_desc": "Choose the UI language (English / Japanese).",
+    "lang_en": "English",
+    "lang_ja": "Japanese",
+    "whitelist_column_desc": "Whether the device MAC is on the whitelist (icon)",
     "save": "Save",
     "reset": "Reset",
     "theme": "Theme"
+  },
+  "highlight": {
+    "unassociated_probing": "Unassociated probing client",
+    "unknown_not_whitelisted": "Device not on whitelist"
   },
   "common": {
     "ok": "OK",
@@ -134,6 +147,10 @@
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
-    "no_data": "No data"
+    "no_data": "No data",
+    "yes": "Yes",
+    "no": "No",
+    "jspdf_missing": "jsPDF is not loaded.",
+    "select_rows_first": "Select one or more rows from the list first."
   }
 }

@@ -31,7 +31,23 @@ function t(k, o) {
         "signal_filter.device_count": (o&&o.visible||0)+" / "+(o&&o.total||0)+" \u4ef6\u8868\u793a\u4e2d",
         "signal_filter.show_all": "\u5168\u8868\u793a",
         "unassociated.no_devices": "\u672a\u63a5\u7d9a\u30af\u30e9\u30a4\u30a2\u30f3\u30c8\u306f\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3067\u3057\u305f",
-        "common.search": "\u691c\u7d22"
+        "common.search": "\u691c\u7d22",
+        "common.close": "\u9589\u3058\u308b",
+        "common.yes": "\u306f\u3044",
+        "common.no": "\u3044\u3044\u3048",
+        "common.jspdf_missing": "jsPDF\u304c\u8aad\u307f\u8fbc\u307e\u308c\u3066\u3044\u307e\u305b\u3093\u3002",
+        "common.select_rows_first": "\u4e00\u89a7\u304b\u30891\u4ef6\u4ee5\u4e0a\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+        "export.csv": "CSV\u51fa\u529b",
+        "export.pdf": "PDF\u51fa\u529b",
+        "settings.lang_en": "\u82f1\u8a9e",
+        "settings.lang_ja": "\u65e5\u672c\u8a9e",
+        "unassociated.auto_refresh_interval": "15\u79d2\u3054\u3068\u306b\u66f4\u65b0",
+        "unassociated.broadcast_label": "\uff08\u30d6\u30ed\u30fc\u30c9\u30ad\u30e3\u30b9\u30c8\uff09",
+        "unassociated.pdf_heading": "Kismet \u672a\u63a5\u7d9a\u30af\u30e9\u30a4\u30a2\u30f3\u30c8",
+        "unassociated.export_signal_hdr": "\u96fb\u6ce2(dBm)",
+        "signal_filter.above_60": "\u2267-60dBm\uff08\u540c\u5ba4\u76f8\u5f53\uff09",
+        "signal_filter.above_70": "\u2267-70dBm",
+        "signal_filter.above_80": "\u2267-80dBm"
     };
     return ja[k] || k;
 }
@@ -78,7 +94,7 @@ function extractSignal(dev) {
 function extractProbedSsids(dev) {
     var dot11 = dev["dot11.device"] || dev;
     var m = dot11["dot11.device.probed_ssid_map"];
-    if (!m) return "(broadcast)";
+    if (!m) return t("unassociated.broadcast_label");
     var ssids = [];
     if (Array.isArray(m)) {
         for (var i = 0; i < m.length; i++) {
@@ -98,7 +114,7 @@ function extractProbedSsids(dev) {
             }
         }
     }
-    return ssids.length > 0 ? ssids.join(", ") : "(broadcast)";
+    return ssids.length > 0 ? ssids.join(", ") : t("unassociated.broadcast_label");
 }
 
 function formatTime(epoch) {
@@ -212,9 +228,9 @@ var currentThreshold = null;
 function createFilterBar(container) {
     var bar = $("<div>", { class: "signal-filter-bar" });
     var thresholds = [
-        { val: -60, label: "\u2265-60dBm" },
-        { val: -70, label: "\u2265-70dBm" },
-        { val: -80, label: "\u2265-80dBm" },
+        { val: -60, label: t("signal_filter.above_60") },
+        { val: -70, label: t("signal_filter.above_70") },
+        { val: -80, label: t("signal_filter.above_80") },
         { val: null, label: t("signal_filter.show_all") }
     ];
     thresholds.forEach(function(th) {
@@ -257,13 +273,21 @@ function exportCSV() {
     if (!unassocTable) return;
     var data = unassocTable.getData("active");
     var BOM = "\uFEFF";
-    var headers = ["MAC","Manufacturer","Probed SSIDs","Signal(dBm)","Channel","Last Seen","Whitelist"];
+    var headers = [
+        t("device_list.mac_address"),
+        t("device_list.manufacturer"),
+        t("unassociated.probed_ssids"),
+        t("unassociated.export_signal_hdr"),
+        t("device_list.channel"),
+        t("device_list.last_seen"),
+        t("whitelist.status")
+    ];
     var lines = [BOM + headers.join(",")];
     data.forEach(function(r) {
         lines.push([
             r.mac, '"' + (r.manuf||"") + '"', '"' + (r.probed||"") + '"',
             r.signal_dbm || "", r.channel, r.last_seen_fmt || "",
-            r.approved ? "Yes" : "No"
+            r.approved ? t("common.yes") : t("common.no")
         ].join(","));
     });
     var blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
@@ -276,24 +300,32 @@ function exportCSV() {
 function exportPDF() {
     if (typeof jspdf === "undefined" && typeof jsPDF === "undefined" &&
         typeof window.jspdf === "undefined") {
-        alert("jsPDF not loaded");
+        alert(t("common.jspdf_missing"));
         return;
     }
     var JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
     var doc = new JsPDF();
     doc.setFontSize(14);
-    doc.text("Kismet - " + t("unassociated.title"), 14, 20);
+    doc.text(t("unassociated.pdf_heading"), 14, 20);
     doc.setFontSize(10);
     doc.text(new Date().toLocaleString("ja-JP"), 14, 28);
     var data = unassocTable ? unassocTable.getData("active") : [];
     var rows = data.map(function(r) {
         return [r.mac, r.manuf, r.probed, r.signal_dbm || "", r.channel,
-                r.last_seen_fmt || "", r.approved ? "O" : "X"];
+                r.last_seen_fmt || "", r.approved ? t("common.yes") : t("common.no")];
     });
     if (typeof doc.autoTable === "function") {
         doc.autoTable({
             startY: 35,
-            head: [["MAC","Manufacturer","Probed SSIDs","Signal","CH","Last Seen","WL"]],
+            head: [[
+                t("device_list.mac_address"),
+                t("device_list.manufacturer"),
+                t("unassociated.probed_ssids"),
+                t("unassociated.export_signal_hdr"),
+                t("device_list.channel"),
+                t("device_list.last_seen"),
+                t("whitelist.status")
+            ]],
             body: rows,
             styles: { fontSize: 7 }
         });
@@ -318,9 +350,10 @@ function OpenUnassociatedPanel() {
         type: "search", placeholder: t("common.search"), class: "unassoc-search"
     });
     toolbar.append(searchInput);
-    toolbar.append($("<button>", { type: "button", class: "btn btn-export" }).text("CSV").on("click", exportCSV));
-    toolbar.append($("<button>", { type: "button", class: "btn btn-export" }).text("PDF").on("click", exportPDF));
-    toolbar.append($("<span>", { class: "auto-refresh-indicator" }).html("&#x21bb; 15s"));
+    toolbar.append($("<button>", { type: "button", class: "btn btn-export" }).text(t("export.csv")).on("click", exportCSV));
+    toolbar.append($("<button>", { type: "button", class: "btn btn-export" }).text(t("export.pdf")).on("click", exportPDF));
+    toolbar.append($("<span>", { class: "auto-refresh-indicator" })
+        .text("\u21bb " + t("unassociated.auto_refresh_interval", { sec: 15 })));
     root.append(toolbar);
 
     root.append($("<div>", { id: "unassoc-status-bar", class: "unassoc-status" })
@@ -376,7 +409,7 @@ function OpenUnassociatedPanel() {
             css: { position:"absolute", top:"10px", right:"10px",
                    background:"#e74c3c", color:"#fff", border:"none",
                    padding:"5px 12px", cursor:"pointer", borderRadius:"4px" }
-        }).text("X").on("click", function() {
+        }).text(t("common.close")).on("click", function() {
             if (refreshTimer) clearInterval(refreshTimer);
             refreshTimer = null;
             fallback.remove();
@@ -438,9 +471,20 @@ function OpenUnassociatedPanel() {
             });
         } else {
             console.warn("[unassociated] Tabulator not found, using HTML table");
-            $("#" + tableId).html("<table id='unassoc-html-table' style='width:100%;color:#eee;border-collapse:collapse'>" +
-                "<thead><tr><th>WL</th><th>MAC</th><th>Manufacturer</th><th>Probed SSIDs</th>" +
-                "<th>Signal</th><th>CH</th><th>Last Seen</th></tr></thead><tbody></tbody></table>");
+            var ht = $("<table>", {
+                id: "unassoc-html-table",
+                css: { width: "100%", color: "#eee", borderCollapse: "collapse" }
+            });
+            var hr = $("<tr>");
+            hr.append($("<th>").text(t("whitelist.status")));
+            hr.append($("<th>").text(t("device_list.mac_address")));
+            hr.append($("<th>").text(t("device_list.manufacturer")));
+            hr.append($("<th>").text(t("unassociated.probed_ssids")));
+            hr.append($("<th>").text(t("unassociated.export_signal_hdr")));
+            hr.append($("<th>").text(t("device_list.channel")));
+            hr.append($("<th>").text(t("device_list.last_seen")));
+            ht.append($("<thead>").append(hr)).append($("<tbody>"));
+            $("#" + tableId).append(ht);
         }
 
         searchInput.on("keyup", function() {
@@ -476,7 +520,7 @@ function OpenUnassociatedPanel() {
         bulkBar.find(".btn-register").on("click", function() {
             if (!unassocTable) return;
             var sel = unassocTable.getSelectedData();
-            if (!sel.length) { alert(t("whitelist.select_all")); return; }
+            if (!sel.length) { alert(t("common.select_rows_first")); return; }
             if (!confirm(t("whitelist.confirm_bulk_register", { count: sel.length }))) return;
             if (typeof kismet_whitelist_api !== "undefined") {
                 kismet_whitelist_api.addBulkToWhitelist(sel.map(function (r) {

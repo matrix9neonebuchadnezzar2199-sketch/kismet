@@ -929,7 +929,7 @@ kismet_ui_settings.AddSettingsPane({
                 )
                 .append(
                     $('<td>')
-                    .html(rh['name'])
+                    .html(('label' in rh && rh['label']) ? rh['label'] : rh['name'])
                 )
                 .append(
                     $('<td>')

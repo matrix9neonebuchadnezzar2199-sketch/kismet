@@ -17,7 +17,7 @@ exports.registerEnhanced = function () {
 
     kismet_ui.AddDeviceColumn("column_whitelist_status", {
         title: t("whitelist.status"),
-        description: "Whitelist status",
+        description: t("settings.whitelist_column_desc"),
         field: "kismet.device.base.macaddr",
         sortable: true,
         searchable: false,
@@ -32,6 +32,7 @@ exports.registerEnhanced = function () {
 
     kismet_ui.AddDeviceRowHighlight({
         name: "Unassociated Probing Client",
+        label: t("highlight.unassociated_probing"),
         description: t("unassociated.description"),
         priority: 20,
         defaultcolor: "#FFA500",
@@ -56,6 +57,7 @@ exports.registerEnhanced = function () {
 
     kismet_ui.AddDeviceRowHighlight({
         name: "Unknown Device (Not Whitelisted)",
+        label: t("highlight.unknown_not_whitelisted"),
         description: t("whitelist.unknown"),
         priority: 15,
         defaultcolor: "#FFCCCC",
@@ -72,12 +74,13 @@ exports.registerEnhanced = function () {
         kismet_ui_settings.AddSettingsPane({
             id: "language_settings",
             listTitle: t("settings.language"),
+            windowTitle: t("settings.language"),
             create: function (content) {
                 content.empty();
                 var p = $("<p>").text(t("settings.language_desc"));
                 var sel = $("<select>", { id: "kismet-lang-select" });
-                sel.append($("<option>", { value: "en" }).text("English"));
-                sel.append($("<option>", { value: "ja" }).text("Japanese"));
+                sel.append($("<option>", { value: "en" }).text(t("settings.lang_en")));
+                sel.append($("<option>", { value: "ja" }).text(t("settings.lang_ja")));
                 sel.val(kismet_i18n.getCurrentLanguage());
                 content.append(p).append(sel);
             },

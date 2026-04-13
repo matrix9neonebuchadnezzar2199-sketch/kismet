@@ -97,10 +97,14 @@ function clickSetting(c) {
 
     selected_item = c;
 
+    var settingsTitlePrefix = 'Settings - ';
+    if (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) {
+        settingsTitlePrefix = kismet_i18n.t('settings.dialog_title_prefix') + ' - ';
+    }
     if ('windowTitle' in c)
-        settingspanel.headerTitle('Settings - ' + c.windowTitle);
+        settingspanel.headerTitle(settingsTitlePrefix + c.windowTitle);
     else
-        settingspanel.headerTitle('Settings - ' + c.listTitle);
+        settingspanel.headerTitle(settingsTitlePrefix + c.listTitle);
 
     exports.SettingsModified(false);
 

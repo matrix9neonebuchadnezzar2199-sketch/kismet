@@ -19,7 +19,7 @@ function uriForLocale(lng) {
 
 exports.initI18n = function () {
     return new Promise(function (resolve, reject) {
-        var detected = "en";
+        var detected = "ja";
         try {
             if (localStorage.getItem("i18nextLng")) {
                 detected = localStorage.getItem("i18nextLng");
@@ -27,7 +27,7 @@ exports.initI18n = function () {
                 detected = navigator.language.split("-")[0];
             }
         } catch (e) {
-            detected = "en";
+            detected = "ja";
         }
 
         function loadJson(url) {
@@ -45,7 +45,7 @@ exports.initI18n = function () {
             var jaTr = bundles[1];
             var lng = detected;
             if (lng !== "en" && lng !== "ja") {
-                lng = "en";
+                lng = "ja";
             }
             var resources = {
                 en: { translation: enTr },
@@ -96,9 +96,9 @@ exports.getCurrentLanguage = function () {
         return window.i18next.language;
     }
     try {
-        return localStorage.getItem("i18nextLng") || "en";
+        return localStorage.getItem("i18nextLng") || "ja";
     } catch (e) {
-        return "en";
+        return "ja";
     }
 };
 
