@@ -23,11 +23,18 @@ function hashDeviceKey(key) {
     return String(h);
 }
 
+/** Compare MACs regardless of : vs - vs none (Kismet may return different separators). */
+function normalizeMac(m) {
+    if (m == null) return "";
+    return String(m).replace(/[:-]/g, "").toUpperCase();
+}
+
 function extractDbmFromDevice(dev) {
     if (!dev) return null;
     var v = dev["kismet.common.signal.last_signal"];
     if (v != null) return parseFloat(v);
     var sig = dev["kismet.device.base.signal"];
+    if (typeof sig === "number") return parseFloat(sig);
     if (sig && typeof sig === "object" && sig["kismet.common.signal.last_signal"] != null) {
         return parseFloat(sig["kismet.common.signal.last_signal"]);
     }
@@ -62,6 +69,7 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
     var chartInst = null;
     var signalHistory = [];
     var rateSec = 1;
+    var panelClosed = false;
     var panelId = "signal-monitor-" + hashDeviceKey(deviceKey);
 
     var user = kismet.getStorage("kismet.base.login.username", "kismet");
@@ -94,8 +102,12 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
         "<span>-20</span><span>-50</span><span>-70</span><span>-90</span>"
     ));
 
-    var canvas = $("<canvas>", { width: 520, height: 180 });
-    var chartHolder = $("<div>", { class: "signal-chart-container" }).append(canvas);
+    var canvasId = "signal-chart-" + hashDeviceKey(deviceKey + "-" + macAddr + "-" + Date.now());
+    var canvas = $("<canvas>", { id: canvasId });
+    var chartHolder = $("<div>", {
+        class: "signal-chart-container",
+        css: { width: "100%", position: "relative", minHeight: "180px" }
+    }).append(canvas);
     content.append(chartHolder);
 
     var intervalSel = $("<select>").append(
@@ -114,6 +126,9 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
     content.append(controls);
 
     function updateUi(dbm) {
+        if (panelClosed) {
+            return;
+        }
         if (dbm == null || isNaN(dbm)) {
             valNum.text("--");
             valLbl.text(signalLabel(null, tfn));
@@ -125,13 +140,32 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
         var pct = Math.max(0, Math.min(100, (dbm + 100) / 80 * 100));
         barInner.css({ width: pct + "%", background: barColor(dbm) });
         var now = new Date();
-        var label = now.toTimeString().slice(0, 8);
+        var label = now.toTimeString().slice(0, 8) + "." +
+            ("00" + now.getMilliseconds()).slice(-3);
         signalHistory.push({ t: label, dbm: dbm });
         if (signalHistory.length > 120) signalHistory.shift();
         if (chartInst) {
-            chartInst.data.labels = signalHistory.map(function (p) { return p.t; });
-            chartInst.data.datasets[0].data = signalHistory.map(function (p) { return p.dbm; });
-            chartInst.update("none");
+            var box = chartInst.canvas;
+            var live = box && box.getContext &&
+                box.parentNode &&
+                (typeof box.isConnected !== "boolean" || box.isConnected) &&
+                (!box.ownerDocument || box.ownerDocument.contains(box));
+            if (!live) {
+                chartInst = null;
+            }
+        }
+        if (chartInst) {
+            try {
+                var ds = chartInst.data.datasets[0];
+                chartInst.data.labels = signalHistory.map(function (p) { return p.t; });
+                ds.data = signalHistory.map(function (p) { return p.dbm; });
+                /* pointRadius 0 hides single-point lines; show dots until enough samples for a stroke */
+                ds.pointRadius = signalHistory.length < 3 ? 3 : 0;
+                ds.pointHoverRadius = 5;
+                chartInst.update("none");
+            } catch (chartErr) {
+                chartInst = null;
+            }
         }
     }
 
@@ -159,27 +193,42 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
     }
 
     function startPoll() {
-        pollTimer = window.setInterval(function () {
+        if (pollTimer) {
+            window.clearInterval(pollTimer);
+            pollTimer = null;
+        }
+        function pollOnce() {
             $.ajax({
                 url: local_uri_prefix + "devices/views/phy-IEEE802.11/devices.json",
                 method: "POST",
                 contentType: "application/x-www-form-urlencoded",
                 data: "json=" + encodeURIComponent(JSON.stringify({
-                    fields: ["kismet.device.base.macaddr", "kismet.device.base.signal"]
+                    fields: [
+                        "kismet.device.base.macaddr",
+                        "kismet.device.base.signal"
+                    ]
                 })),
                 success: function (data) {
                     var arr = data.data || data;
                     if (!Array.isArray(arr)) arr = [arr];
+                    if (typeof kismet !== "undefined" && kismet.sanitizeObject) {
+                        arr = kismet.sanitizeObject(arr);
+                    }
+                    var macWant = normalizeMac(macAddr);
                     for (var i = 0; i < arr.length; i++) {
-                        if (arr[i]["kismet.device.base.macaddr"] === macAddr) {
-                            var dbm = extractDbmFromDevice(arr[i]);
+                        var row = arr[i];
+                        var m = row["kismet.device.base.macaddr"];
+                        if (normalizeMac(m) === macWant) {
+                            var dbm = extractDbmFromDevice(row);
                             updateUi(dbm);
                             return;
                         }
                     }
                 }
             });
-        }, rateSec * 1000);
+        }
+        pollOnce();
+        pollTimer = window.setInterval(pollOnce, rateSec * 1000);
     }
 
     function connectWs() {
@@ -241,6 +290,7 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
         theme: "dark",
         headerControls: { iconfont: "jsglyph", controls: "closeonly" },
         onclosed: function () {
+            panelClosed = true;
             if (ws && ws.readyState === 1) {
                 try {
                     ws.send(JSON.stringify({ cancel: macAddr }));
@@ -248,43 +298,98 @@ exports.OpenSignalMonitor = function (deviceKey, macAddr, deviceName, manufName)
                 ws.close();
             }
             if (pollTimer) window.clearInterval(pollTimer);
+            pollTimer = null;
             if (mockTimer) window.clearInterval(mockTimer);
-            if (chartInst) chartInst.destroy();
+            mockTimer = null;
+            if (chartInst) {
+                try { chartInst.destroy(); } catch (e) { /* ignore */ }
+                chartInst = null;
+            }
         },
         callback: function () {
-            if (typeof Chart === "undefined") {
-                startMock();
-                return;
+            function initChart(attempt) {
+                attempt = attempt || 0;
+                if (typeof Chart === "undefined") {
+                    connectWs();
+                    window.setTimeout(function () {
+                        if (!signalHistory.length && !pollTimer && (!ws || ws.readyState !== 1)) {
+                            if (ws) ws.close();
+                            startMock();
+                        }
+                    }, 2000);
+                    return;
+                }
+                var el = document.getElementById(canvasId);
+                if (!el || !el.getContext) {
+                    if (attempt < 20) {
+                        window.setTimeout(function () { initChart(attempt + 1); }, 100);
+                    } else {
+                        connectWs();
+                        window.setTimeout(function () {
+                            if (!signalHistory.length && !pollTimer && (!ws || ws.readyState !== 1)) {
+                                if (ws) ws.close();
+                                startMock();
+                            }
+                        }, 2000);
+                    }
+                    return;
+                }
+                var ctx = el.getContext("2d");
+                if (!ctx) {
+                    if (attempt < 20) {
+                        window.setTimeout(function () { initChart(attempt + 1); }, 100);
+                    } else {
+                        connectWs();
+                        window.setTimeout(function () {
+                            if (!signalHistory.length && !pollTimer && (!ws || ws.readyState !== 1)) {
+                                if (ws) ws.close();
+                                startMock();
+                            }
+                        }, 2000);
+                    }
+                    return;
+                }
+                try {
+                    chartInst = new Chart(ctx, {
+                        type: "line",
+                        data: {
+                            labels: [],
+                            datasets: [{
+                                data: [],
+                                borderColor: "#3498db",
+                                borderWidth: 2,
+                                tension: 0.3,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                                fill: false,
+                                spanGaps: true
+                            }]
+                        },
+                        options: {
+                            animation: false,
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { min: -100, max: -10 },
+                                x: { display: true }
+                            },
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                } catch (e) {
+                    chartInst = null;
+                }
+                connectWs();
+                window.setTimeout(function () {
+                    if (!signalHistory.length && !pollTimer && (!ws || ws.readyState !== 1)) {
+                        if (ws) ws.close();
+                        startMock();
+                    }
+                }, 2000);
             }
-            var ctx = canvas[0].getContext("2d");
-            chartInst = new Chart(ctx, {
-                type: "line",
-                data: {
-                    labels: [],
-                    datasets: [{
-                        data: [],
-                        borderColor: "#3498db",
-                        tension: 0.3,
-                        pointRadius: 0,
-                        fill: false
-                    }]
-                },
-                options: {
-                    animation: false,
-                    scales: {
-                        y: { min: -100, max: -10 },
-                        x: { display: true }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-            connectWs();
             window.setTimeout(function () {
-                if (!signalHistory.length && !pollTimer && (!ws || ws.readyState !== 1)) {
-                    if (ws) ws.close();
-                    startMock();
-                }
-            }, 2000);
+                initChart(0);
+            }, 300);
         }
     });
 
