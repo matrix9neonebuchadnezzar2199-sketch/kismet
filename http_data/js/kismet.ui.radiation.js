@@ -77,6 +77,8 @@ kismet_ui_iconbar.AddIconbarItem({
 kismet_ui_sidebar.AddSidebarItem({
     id: 'radiation_sidebar',
     listTitle: '<i class="fa fa-circle-radiation"></i> Radiation',
+    listTitleIcon: '<i class="fa fa-circle-radiation"></i> ',
+    i18nKey: 'sidebar.radiation',
     clickCallback: function() {
         radiationWindow();
     },

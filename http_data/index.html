@@ -242,7 +242,7 @@ function load_main_ui() {
         var shrink = $('<p>', {
             'id': 'shrink_shrink',
             'class': 'shrinker pseudolink',
-        }).html("Minimize")
+        }).html((typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ? kismet_i18n.t('common.minimize') : '\u6700\u5c0f\u5316')
         .on("click", () => {
             shrinker();
         });

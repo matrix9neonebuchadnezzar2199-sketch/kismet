@@ -101,10 +101,25 @@ function clickSetting(c) {
     if (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) {
         settingsTitlePrefix = kismet_i18n.t('settings.dialog_title_prefix') + ' - ';
     }
-    if ('windowTitle' in c)
-        settingspanel.headerTitle(settingsTitlePrefix + c.windowTitle);
-    else
-        settingspanel.headerTitle(settingsTitlePrefix + c.listTitle);
+    var paneTitle = c.listTitle;
+    if (c.i18nKey && typeof kismet_i18n !== 'undefined' && kismet_i18n.t) {
+        var ht = kismet_i18n.t(c.i18nKey);
+        if (ht && ht !== c.i18nKey) {
+            paneTitle = ht;
+        }
+    }
+    if ('windowTitle' in c) {
+        var wt = c.windowTitle;
+        if (c.windowTitleKey && typeof kismet_i18n !== 'undefined' && kismet_i18n.t) {
+            var wtr = kismet_i18n.t(c.windowTitleKey);
+            if (wtr && wtr !== c.windowTitleKey) {
+                wt = wtr;
+            }
+        }
+        settingspanel.headerTitle(settingsTitlePrefix + wt);
+    } else {
+        settingspanel.headerTitle(settingsTitlePrefix + paneTitle);
+    }
 
     exports.SettingsModified(false);
 
@@ -142,12 +157,20 @@ function populateList(list) {
 
         c.position = i;
 
+        var paneLabel = c.listTitle;
+        if (c.i18nKey && typeof kismet_i18n !== 'undefined' && kismet_i18n.t) {
+            var ptr = kismet_i18n.t(c.i18nKey);
+            if (ptr && ptr !== c.i18nKey) {
+                paneLabel = ptr;
+            }
+        }
+
         list.append(
             $('<div>', {
                 class: 'k-s-list-item',
                 id: 'sb_' + c.position,
             })
-            .html(c.listTitle)
+            .html(paneLabel)
             .on('click', createClickCallback(c))
         );
     }
@@ -370,6 +393,8 @@ exports.ShowSettings = function(starter) {
 kismet_ui_sidebar.AddSidebarItem({
     id: 'sidebar-settings',
     listTitle: '<i class="fa fa-gear"></i> Settings',
+    listTitleIcon: '<i class="fa fa-gear"></i> ',
+    i18nKey: 'sidebar.settings',
     priority: -100000,
     clickCallback: function() {
         exports.ShowSettings();

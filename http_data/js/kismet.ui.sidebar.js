@@ -73,12 +73,19 @@ function populateList(list) {
 
     for (var i in SidebarItems) {
         var c = SidebarItems[i];
+        var label = c.listTitle;
+        if (c.i18nKey && typeof kismet_i18n !== 'undefined' && kismet_i18n.t) {
+            var tr = kismet_i18n.t(c.i18nKey);
+            if (tr && tr !== c.i18nKey) {
+                label = (c.listTitleIcon || '') + tr;
+            }
+        }
         list.append(
             $('<div>', {
                 id: c.id,
                 class: 'k-sb-list-item'
             })
-            .html(c.listTitle)
+            .html(label)
             .on('click', createListCallback(c))
         );
     }

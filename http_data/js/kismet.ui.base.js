@@ -170,6 +170,7 @@ exports.renderUsecTime = function(data) {
 
 kismet_ui.AddDeviceColumn("commonname", {
     'title': 'Name',
+    'titleKey': 'device_list.name',
     'description': 'Device name',
     'field': 'kismet.device.base.commonname',
     'sortable': true,
@@ -182,6 +183,7 @@ kismet_ui.AddDeviceColumn("commonname", {
 
 kismet_ui.AddDeviceColumn("type", {
     'title': 'Type',
+    'titleKey': 'device_list.type',
     'description': 'Device type',
     'field': 'kismet.device.base.type',
     'sortable': true,
@@ -190,6 +192,7 @@ kismet_ui.AddDeviceColumn("type", {
 
 kismet_ui.AddDeviceColumn("crypt", {
     'title': 'Encryption',
+    'titleKey': 'device_list.encryption',
     'description': 'Advertised encryption information',
     'field': 'kismet.device.base.crypt',
     'sortable': true,
@@ -203,6 +206,7 @@ kismet_ui.AddDeviceColumn("crypt", {
 
 kismet_ui.AddDeviceColumn("first_time", {
     'title': 'First Seen',
+    'titleKey': 'device_list.first_seen',
     'description': 'First seen timestamp',
     'field': 'kismet.device.base.first_time',
     'sortable': true,
@@ -214,6 +218,7 @@ kismet_ui.AddDeviceColumn("first_time", {
 
 kismet_ui.AddDeviceColumn("last_time", {
     'title': 'Last Seen',
+    'titleKey': 'device_list.last_seen',
     'description': 'Last active timestamp',
     'field': 'kismet.device.base.last_time',
     'sortable': true,
@@ -225,6 +230,7 @@ kismet_ui.AddDeviceColumn("last_time", {
 
 kismet_ui.AddDeviceColumn("signal", {
     'title': 'Signal',
+    'titleKey': 'device_list.signal',
     'description': 'Last observed signal',
     'field': ['kismet.device.base.signal/kismet.common.signal.last_signal', 'device_last_signal'],
     'sortable': true,
@@ -238,6 +244,7 @@ kismet_ui.AddDeviceColumn("signal", {
 
 kismet_ui.AddDeviceColumn("channel", {
     'title': 'Channel',
+    'titleKey': 'device_list.channel',
     'description': 'Last observed chanel',
     'field': 'kismet.device.base.channel',
     'fields': ['kismet.device.base.frequency', 'kismet.device.base.phyname'],
@@ -257,6 +264,7 @@ kismet_ui.AddDeviceColumn("channel", {
 
 kismet_ui.AddDeviceColumn("datasize", {
     'title': 'Data',
+    'titleKey': 'device_list.data_size',
     'description': 'Data seen',
     'field': 'kismet.device.base.datasize',
     'sortable': true,
@@ -268,6 +276,7 @@ kismet_ui.AddDeviceColumn("datasize", {
 
 kismet_ui.AddDeviceColumn("macaddr", {
     'title': 'Address',
+    'titleKey': 'device_list.address',
     'description': 'Device address (typically MAC address)',
     'field': 'kismet.device.base.macaddr',
     'sortable': true,
@@ -279,6 +288,7 @@ kismet_ui.AddDeviceColumn("macaddr", {
 
 kismet_ui.AddDeviceColumn("manuf", {
     'title': 'Manufacturer',
+    'titleKey': 'device_list.manufacturer',
     'desscription': 'Device manufacturer',
     'field': 'kismet.device.base.manuf',
     'sortable': true,
@@ -290,6 +300,7 @@ kismet_ui.AddDeviceColumn("manuf", {
 
 kismet_ui.AddDeviceColumn("packet_rrd", {
     'title': 'Packets',
+    'titleKey': 'device_list.packet_spark',
     'description': 'Packet history graph',
     'field': ['kismet.device.base.packets.rrd/kismet.common.rrd.minute_vec', 'packet_minute_vec'],
     'fields': [
@@ -345,6 +356,7 @@ kismet_ui.AddDeviceColumn("packet_rrd", {
 
 kismet_ui.AddDeviceColumn("packets", {
     'title': 'Total packets',
+    'titleKey': 'device_list.total_packets',
     'desscription': 'Total packets',
     'field': 'kismet.device.base.packets.total',
     'sortable': true,
@@ -353,6 +365,7 @@ kismet_ui.AddDeviceColumn("packets", {
 
 kismet_ui.AddDeviceColumn("seenbycount", {
     'title': 'Seen by #',
+    'titleKey': 'device_list.seen_by',
     'description': '# of datasources which have seen this device',
     'field': ['#kismet.device.base.seenby', 'seenbycount'],
     'sortable': true,
@@ -1253,6 +1266,8 @@ kismet_ui.AddDeviceDetail("devel", "Dev/Debug Options", 10000, {
 kismet_ui_sidebar.AddSidebarItem({
     id: 'memory_sidebar',
     listTitle: '<i class="fa fa-tasks"></i> Memory Monitor',
+    listTitleIcon: '<i class="fa fa-tasks"></i> ',
+    i18nKey: 'sidebar.memory_monitor',
     clickCallback: function() {
         exports.MemoryMonitor();
     },
@@ -1263,6 +1278,8 @@ kismet_ui_sidebar.AddSidebarItem({
     id: 'pcap_sidebar',
     priority: 10000,
     listTitle: '<i class="fa fa-download"></i> Download Pcap-NG',
+    listTitleIcon: '<i class="fa fa-download"></i> ',
+    i18nKey: 'sidebar.download_pcap',
     clickCallback: function() {
         location.href = "datasource/pcap/all_sources.pcapng";
     },
@@ -1577,6 +1594,8 @@ function memorydisplay_refresh() {
 kismet_ui_sidebar.AddSidebarItem({
     id: 'packetqueue_sidebar',
     listTitle: '<i class="fa fa-area-chart"></i> Packet Rates',
+    listTitleIcon: '<i class="fa fa-area-chart"></i> ',
+    i18nKey: 'sidebar.packet_rates',
     clickCallback: function() {
         exports.PacketQueueMonitor();
     },
@@ -3854,6 +3873,8 @@ kismet_ui.AddDeviceRowHighlight({
 kismet_ui_sidebar.AddSidebarItem({
     id: 'thermal_sidebar',
     listTitle: '<i class="fa fa-thermometer"></i> Thermals',
+    listTitleIcon: '<i class="fa fa-thermometer"></i> ',
+    i18nKey: 'sidebar.thermals',
     clickCallback: function() {
         exports.ThermalMonitor();
     },

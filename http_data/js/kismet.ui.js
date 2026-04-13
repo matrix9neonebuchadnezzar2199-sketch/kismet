@@ -322,6 +322,9 @@ exports.AddDeviceColumn = (id, options) => {
     if ('sortable' in options)
         coldef['sortable'] = options['sortable'];
 
+    if ('titleKey' in options)
+        coldef['titleKey'] = options['titleKey'];
+
     device_columnlist2.set(id, coldef);
 }
 
@@ -868,6 +871,7 @@ exports.renderTemperature = function(c, precision = 5) {
 kismet_ui_settings.AddSettingsPane({
     id: 'core_device_row_highlights',
     listTitle: 'Device Row Highlighting',
+    i18nKey: 'settings.pane_device_rows',
     create: function(elem) {
         elem.append(
             $('<form>', {
@@ -1032,9 +1036,16 @@ function GenerateDeviceFieldList2() {
 
 /* Generate a single column for the devicelist tabulator format */
 function GenerateDeviceTabulatorColumn(c) {
+    var resolvedTitle = c['title'];
+    if (c['titleKey'] && typeof kismet_i18n !== 'undefined' && kismet_i18n.t) {
+        var tr = kismet_i18n.t(c['titleKey']);
+        if (tr && tr !== c['titleKey']) {
+            resolvedTitle = tr;
+        }
+    }
     var col = {
         'field': c['kismetId'],
-        'title': c['title'],
+        'title': resolvedTitle,
         'formatter': (cell, params, onrender) => {
             try {
                 return c['render'](cell.getValue(), cell.getRow().getData(), cell, onrender, c['auxdata']);
@@ -1044,7 +1055,7 @@ function GenerateDeviceTabulatorColumn(c) {
         },
         'headerSort': c['sortable'],
         'headerContextMenu':  [ {
-            'label': "Hide Column",
+            'label': (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ? kismet_i18n.t('common.hide_column') : 'Hide Column',
             'action': function(e, column) {
                 devicetable_prefs['columns'] = devicetable_prefs['columns'].filter(c => {
                     return c !== column.getField();
@@ -1496,8 +1507,19 @@ exports.InitializeDeviceTable = function(element) {
     var searchterm = kismet.getStorage('kismet.ui.deviceview.search', "");
 
     if ($('#center-device-extras').length == 0) {
-        var devviewmenu = $(`<form action="#"><span id="device_view_holder"></span></form><input class="device_search" type="search" id="device_search" placeholder="Filter..." value="${searchterm}"></input>`);
-        $('#centerpane-tabs').append($('<div id="center-device-extras" style="position: absolute; right: 10px; top: 5px; height: 30px; display: flex;">').append(devviewmenu));
+        var ph = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ? kismet_i18n.t('common.filter_placeholder') : '\u30d5\u30a3\u30eb\u30bf\u30fc\u2026';
+        var devviewmenu = $('<div id="center-device-extras" style="position: absolute; right: 10px; top: 5px; height: 30px; display: flex;">');
+        devviewmenu.append(
+            $('<form>', { action: '#' }).append($('<span>', { id: 'device_view_holder' })),
+            $('<input>', {
+                class: 'device_search',
+                type: 'search',
+                id: 'device_search',
+                placeholder: ph,
+                value: searchterm
+            })
+        );
+        $('#centerpane-tabs').append(devviewmenu);
         exports.BuildDeviceViewSelector($('span#device_view_holder'));
 
         $('#device_search').on('keydown', (evt) => {

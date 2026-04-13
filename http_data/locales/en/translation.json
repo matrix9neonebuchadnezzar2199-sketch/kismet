@@ -9,7 +9,14 @@
     "messages": "Messages",
     "login": "Login",
     "logout": "Logout",
-    "export_report": "Export Report"
+    "export_report": "Export Report",
+    "channel_coverage": "Channel Coverage",
+    "data_sources": "Data Sources",
+    "memory_monitor": "Memory Monitor",
+    "download_pcap": "Download Pcap-NG",
+    "packet_rates": "Packet Rates",
+    "thermals": "Thermals",
+    "radiation": "Radiation"
   },
   "device_list": {
     "name": "Device Name",
@@ -20,6 +27,11 @@
     "last_seen": "Last Seen",
     "first_seen": "First Seen",
     "packets": "Packets",
+    "packet_spark": "Packet history",
+    "total_packets": "Total packets",
+    "seen_by": "Seen by #",
+    "address": "Address",
+    "data_size": "Data",
     "manufacturer": "Manufacturer",
     "mac_address": "MAC Address",
     "encryption": "Encryption",
@@ -124,6 +136,7 @@
     "filter_note": "* Signal filter applied: ≧{{threshold}}dBm"
   },
   "settings": {
+    "pane_device_rows": "Device Row Highlighting",
     "dialog_title_prefix": "Settings",
     "language": "Language",
     "language_desc": "Choose the UI language (English / Japanese).",
@@ -139,6 +152,9 @@
     "unknown_not_whitelisted": "Device not on whitelist"
   },
   "common": {
+    "minimize": "Minimize",
+    "hide_column": "Hide Column",
+    "filter_placeholder": "Filter...",
     "ok": "OK",
     "cancel": "Cancel",
     "close": "Close",

@@ -9,7 +9,14 @@
     "messages": "メッセージ",
     "login": "ログイン",
     "logout": "ログアウト",
-    "export_report": "レポート出力"
+    "export_report": "レポート出力",
+    "channel_coverage": "チャンネルカバレッジ",
+    "data_sources": "データソース",
+    "memory_monitor": "メモリモニター",
+    "download_pcap": "Pcap-NG ダウンロード",
+    "packet_rates": "パケットレート",
+    "thermals": "サーマル",
+    "radiation": "放射線"
   },
   "device_list": {
     "name": "デバイス名",
@@ -20,6 +27,11 @@
     "last_seen": "最終検出",
     "first_seen": "初回検出",
     "packets": "パケット数",
+    "packet_spark": "パケット推移",
+    "total_packets": "総パケット数",
+    "seen_by": "検出ソース数",
+    "address": "アドレス",
+    "data_size": "データ量",
     "manufacturer": "メーカー",
     "mac_address": "MACアドレス",
     "encryption": "暗号化",
@@ -124,6 +136,7 @@
     "filter_note": "※信号フィルタ適用: ≧{{threshold}}dBm"
   },
   "settings": {
+    "pane_device_rows": "デバイス行の強調表示",
     "dialog_title_prefix": "設定",
     "language": "言語設定",
     "language_desc": "UIの表示言語を選択してください（英語 / 日本語）。",
@@ -139,6 +152,9 @@
     "unknown_not_whitelisted": "ホワイトリスト未登録の端末"
   },
   "common": {
+    "minimize": "最小化",
+    "hide_column": "列を非表示",
+    "filter_placeholder": "フィルター…",
     "ok": "OK",
     "cancel": "キャンセル",
     "close": "閉じる",

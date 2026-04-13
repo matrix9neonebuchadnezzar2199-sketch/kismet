@@ -37,6 +37,8 @@ export const hop_to_human = (hop) => {
 kismet_ui_sidebar.AddSidebarItem({
     id: 'datasource_channel_coverage',
     listTitle: '<i class="fa fa-bar-chart-o"></i> Channel Coverage',
+    listTitleIcon: '<i class="fa fa-bar-chart-o"></i> ',
+    i18nKey: 'sidebar.channel_coverage',
     clickCallback: function() {
         ChannelCoverage();
     },
@@ -519,6 +521,8 @@ function channelcoverage_display_refresh() {
 kismet_ui_sidebar.AddSidebarItem({
     id: 'datasource_sources2',
     listTitle: '<i class="fa fa-cogs"></i> Data Sources',
+    listTitleIcon: '<i class="fa fa-cogs"></i> ',
+    i18nKey: 'sidebar.data_sources',
     priority: -500,
     clickCallback: function() {
         DataSources2();
