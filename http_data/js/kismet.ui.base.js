@@ -12,6 +12,21 @@ var local_uri_prefix = "";
 if (typeof(KISMET_URI_PREFIX) !== 'undefined')
     local_uri_prefix = KISMET_URI_PREFIX;
 
+function uiI18n(key, fallback) {
+    if (typeof kismet_i18n !== "undefined" && kismet_i18n.t) {
+        var s = kismet_i18n.t(key);
+        if (s && s !== key) return s;
+    }
+    return fallback;
+}
+function uiI18nOpts(key, opts, fallback) {
+    if (typeof kismet_i18n !== "undefined" && kismet_i18n.t) {
+        var s2 = kismet_i18n.t(key, opts);
+        if (s2 && s2 !== key) return s2;
+    }
+    return fallback;
+}
+
 // Flag we're still loading
 exports.load_complete = 0;
 
@@ -2001,13 +2016,24 @@ function datasourcepackets_refresh() {
 kismet_ui_settings.AddSettingsPane({
     id: 'graph_settings',
     listTitle: "Graph Options",
+    i18nKey: 'settings.pane_graph_options',
     create: (elem) => {
-        elem.append('<form><fieldset id="fs_graph"><legend>Graph Options</legend><div id="graphconfig"></div></fieldset></form>');
+        elem.append($('<form>').append(
+            $('<fieldset>', { id: 'fs_graph' })
+                .append($('<legend>').html(uiI18n('settings.graph_fs_legend', 'Graph Options')))
+                .append($('<div>', { id: 'graphconfig' }))
+        ));
 
         let config = $('#graphconfig', elem);
 
-        config.append('<div><input type="checkbox" id="g_step"><label for="g_step">Use stepped graphs</label></div>');
-        config.append('<p>Stepped graphs have a blockier representation of the same data.  By default, graphs are displayed in linear mode, which typically shows a more sloped representation of changes.</p>');
+        config.append(
+            $('<div>').append(
+                $('<input>', { type: 'checkbox', id: 'g_step' }),
+                $('<label>', { for: 'g_step' }).text(uiI18n('settings.graph_stepped', 'Use stepped graphs'))
+            )
+        );
+        config.append($('<p>').text(uiI18n('settings.graph_stepped_help',
+            'Stepped graphs have a blockier representation of the same data.  By default, graphs are displayed in linear mode, which typically shows a more sloped representation of changes.')));
 
         let graph_step = kismet.getStorage('kismet.ui.graph.stepped', false);
 
@@ -2031,6 +2057,7 @@ kismet_ui_settings.AddSettingsPane({
 kismet_ui_settings.AddSettingsPane({
     id: 'gps_topbar',
     listTitle: "GPS Status",
+    i18nKey: 'settings.pane_gps',
     create: function(elem) {
         elem.append(
             $('<form>', {
@@ -2042,7 +2069,7 @@ kismet_ui_settings.AddSettingsPane({
                 })
                 .append(
                     $('<legend>', {})
-                    .html("GPS Display")
+                    .html(uiI18n('settings.gps_fs_legend', 'GPS Display'))
                 )
                 .append(
                     $('<input>', {
@@ -2056,7 +2083,7 @@ kismet_ui_settings.AddSettingsPane({
                     $('<label>', {
                         for: 'gps_icon'
                     })
-                    .html("Icon only")
+                    .html(uiI18n('settings.gps_icon_only', 'Icon only'))
                 )
                 .append($('<div>', { class: 'spacer' }).html(" "))
                 .append(
@@ -2071,7 +2098,7 @@ kismet_ui_settings.AddSettingsPane({
                     $('<label>', {
                         for: 'gps_text'
                     })
-                    .html("Text only")
+                    .html(uiI18n('settings.gps_text_only', 'Text only'))
                 )
                 .append($('<div>', { class: 'spacer' }).html(" "))
                 .append(
@@ -2086,9 +2113,12 @@ kismet_ui_settings.AddSettingsPane({
                     $('<label>', {
                         for: 'gps_both'
                     })
-                    .html("Icon and Text")
+                    .html(uiI18n('settings.gps_icon_and_text', 'Icon and Text'))
                 )
-                .append($('<div class="k-s-list-div"><input type="checkbox" id="gps-stacked"><label for="gps-stacked">Stack GPS coordinates in toolbar</label></div>'))
+                .append($('<div>', { class: 'k-s-list-div' }).append(
+                    $('<input>', { type: 'checkbox', id: 'gps-stacked' }),
+                    $('<label>', { for: 'gps-stacked' }).text(uiI18n('settings.gps_stack', 'Stack GPS coordinates in toolbar'))
+                ))
             )
         );
 
@@ -2135,6 +2165,7 @@ kismet_ui_settings.AddSettingsPane({
 kismet_ui_settings.AddSettingsPane({
     id: 'base_units_measurements',
     listTitle: 'Units &amp; Measurements',
+    i18nKey: 'settings.pane_units',
     create: function(elem) {
         elem.append(
             $('<form>', {
@@ -2146,7 +2177,7 @@ kismet_ui_settings.AddSettingsPane({
                 })
                 .append(
                     $('<legend>', { })
-                    .html("Distance")
+                    .html(uiI18n('settings.unit_distance', 'Distance'))
                 )
                 .append(
                     $('<input>', {
@@ -2160,7 +2191,7 @@ kismet_ui_settings.AddSettingsPane({
                     $('<label>', {
                         for: 'dst_metric',
                     })
-                    .html('Metric')
+                    .html(uiI18n('settings.unit_metric', 'Metric'))
                 )
                 .append(
                     $('<input>', {
@@ -2174,7 +2205,7 @@ kismet_ui_settings.AddSettingsPane({
                     $('<label>', {
                         for: 'dst_imperial',
                     })
-                    .html('Imperial')
+                    .html(uiI18n('settings.unit_imperial', 'Imperial'))
                 )
             )
             .append(
@@ -2186,7 +2217,7 @@ kismet_ui_settings.AddSettingsPane({
                 })
                 .append(
                     $('<legend>', { })
-                    .html("Speed")
+                    .html(uiI18n('settings.unit_speed', 'Speed'))
                 )
                 .append(
                     $('<input>', {
@@ -2200,7 +2231,7 @@ kismet_ui_settings.AddSettingsPane({
                     $('<label>', {
                         for: 'spd_metric',
                     })
-                    .html('Metric')
+                    .html(uiI18n('settings.unit_metric', 'Metric'))
                 )
                 .append(
                     $('<input>', {
@@ -2214,7 +2245,7 @@ kismet_ui_settings.AddSettingsPane({
                     $('<label>', {
                         for: 'spd_imperial',
                     })
-                    .html('Imperial')
+                    .html(uiI18n('settings.unit_imperial', 'Imperial'))
                 )
             )
             .append(
@@ -2226,7 +2257,7 @@ kismet_ui_settings.AddSettingsPane({
                 })
                 .append(
                     $('<legend>', { })
-                    .html("Temperature")
+                    .html(uiI18n('settings.unit_temp', 'Temperature'))
                 )
                 .append(
                     $('<input>', {
@@ -2240,7 +2271,7 @@ kismet_ui_settings.AddSettingsPane({
                     $('<label>', {
                         for: 'temp_celsius',
                     })
-                    .html('Celsius')
+                    .html(uiI18n('settings.unit_celsius', 'Celsius'))
                 )
                 .append(
                     $('<input>', {
@@ -2254,7 +2285,7 @@ kismet_ui_settings.AddSettingsPane({
                     $('<label>', {
                         for: 'temp_fahrenheit',
                     })
-                    .html('Fahrenheit')
+                    .html(uiI18n('settings.unit_fahrenheit', 'Fahrenheit'))
                 )
             )
         );
@@ -2301,17 +2332,22 @@ kismet_ui_settings.AddSettingsPane({
 kismet_ui_settings.AddSettingsPane({
     id: 'base_plugins',
     listTitle: 'Plugins',
+    i18nKey: 'settings.pane_plugins',
     create: function(elem) {
-        elem.append($('<i>').html('Loading plugin data...'));
+        elem.append($('<i>').html(uiI18n('settings.plugins_loading', 'Loading plugin data...')));
 
         $.get(local_uri_prefix + "plugins/all_plugins.json")
         .done(function(data) {
             elem.empty();
 
-            elem.append('<form><fieldset id="fs_plugins"><legend>Plugins</legend><div id="plugin-content"></div></fieldset></form>')
+            elem.append($('<form>').append(
+                $('<fieldset>', { id: 'fs_plugins' })
+                    .append($('<legend>').html(uiI18n('settings.plugins_fs_legend', 'Plugins')))
+                    .append($('<div>', { id: 'plugin-content' }))
+            ));
 
             if (data.length == 0) {
-                $('#plugin-content', elem).html('No plugins loaded...');
+                $('#plugin-content', elem).html(uiI18n('settings.plugins_none', 'No plugins loaded...'));
             }
 
             var pdiv = $('#plugin-content', elem);
@@ -2322,9 +2358,9 @@ kismet_ui_settings.AddSettingsPane({
                 var sharedlib = $('<p>');
 
                 if (pl['kismet.plugin.shared_object'].length > 0) {
-                    sharedlib.html("Native code from " + pl['kismet.plugin.shared_object']);
+                    sharedlib.html(uiI18n('settings.plugin_native_from', 'Native code from ') + pl['kismet.plugin.shared_object']);
                 } else {
-                    sharedlib.html("No native code");
+                    sharedlib.html(uiI18n('settings.plugin_no_native', 'No native code'));
                 }
 
                 pdiv.append(
@@ -2368,7 +2404,11 @@ kismet_ui_settings.AddSettingsPane({
 kismet_ui_settings.AddSettingsPane({
     id: 'base_login_password',
     listTitle: 'Login &amp; Password',
+    i18nKey: 'settings.pane_login',
     create: function(elem) {
+        var su = (typeof exports.system_user !== 'undefined' && exports.system_user) ? exports.system_user : '[unknown]';
+        var pathLine = uiI18nOpts('settings.login_path', { user: su },
+            'This server is running as <code>' + su + '</code>, so the password can be found in <code>~' + su + '/.kismet/kismet_httpd.conf</code>');
         elem.append(
             $('<form>', {
                 id: 'form'
@@ -2379,26 +2419,30 @@ kismet_ui_settings.AddSettingsPane({
                 })
                 .append(
                     $('<legend>', {})
-                    .html('Server Login')
+                    .html(uiI18n('settings.login_fs_legend', 'Server Login'))
                 )
                 .append(
                     $('<p>')
-                    .html('Kismet requires a username and password for functionality which changes the server, such as adding interfaces or changing configuration, or accessing some types of data.')
+                    .html(uiI18n('settings.login_p1', 'Kismet requires a username and password for functionality which changes the server, such as adding interfaces or changing configuration, or accessing some types of data.'))
                 )
                 .append(
                     $('<p>')
-                    .html('The Kismet password is stored in <code>~/.kismet/kismet_httpd.conf</code> in the home directory of the user running Kismet.  You will need this password to configure data sources, download pcap and other logs, or change server-side settings.<br>This server is running as <code>' + exports.system_user + '</code>, so the password can be found in <code>~' + exports.system_user + '/.kismet/kismet_httpd.conf</code>')
+                    .html(uiI18n('settings.login_p2', 'The Kismet password is stored in <code>~/.kismet/kismet_httpd.conf</code> in the home directory of the user running Kismet. You will need this password to configure data sources, download pcap and other logs, or change server-side settings.'))
                 )
                 .append(
                     $('<p>')
-                    .html('If you are a guest on this server you may continue without entering an admin password, but you will not be able to perform some actions or view some data.')
+                    .html(pathLine)
+                )
+                .append(
+                    $('<p>')
+                    .html(uiI18n('settings.login_p3', 'If you are a guest on this server you may continue without entering an admin password, but you will not be able to perform some actions or view some data.'))
                 )
                 .append(
                     $('<br>')
                 )
                 .append(
                     $('<span style="display: inline-block; width: 8em;">')
-                    .html('User name: ')
+                    .html(uiI18n('settings.login_username', 'User name: '))
                 )
                 .append(
                     $('<input>', {
@@ -2412,7 +2456,7 @@ kismet_ui_settings.AddSettingsPane({
                 )
                 .append(
                     $('<span style="display: inline-block; width: 8em;">')
-                    .html('Password: ')
+                    .html(uiI18n('settings.login_password', 'Password: '))
                 )
                 .append(
                     $('<input>', {
@@ -2460,7 +2504,7 @@ kismet_ui_settings.AddSettingsPane({
 
             checker.addClass('fa-spin');
             checker.addClass('fa-refresh');
-            checkertext.text("  Checking...");
+            checkertext.text(uiI18n('settings.login_checking', '  Checking...'));
 
             checkerdiv.show();
 
@@ -2473,7 +2517,7 @@ kismet_ui_settings.AddSettingsPane({
                         checker.removeClass('fa-spin');
                         checker.removeClass('fa-refresh');
                         checker.addClass('fa-exclamation-circle');
-                        checkertext.text("  Invalid login");
+                        checkertext.text(uiI18n('settings.login_invalid', '  Invalid login'));
                     } else {
                         checker.removeClass('fa-exclamation-circle');
                         checker.removeClass('fa-spin');
@@ -2515,28 +2559,36 @@ kismet_ui_settings.AddSettingsPane({
 });
 
 function show_role_help(role) {
-    var rolehelp = `Unknown role ${role}; this could be assigned as a custom role for a Kismet plugin.`;
+    var orig = role;
+    var rolehelp = uiI18nOpts('settings.api_role_unknown', { role: role },
+        'Unknown role ' + role + '; this could be assigned as a custom role for a Kismet plugin.');
+    var panelRole = role;
 
     if (role === "admin")
-        rolehelp = "The admin role is assigned to the primary web interface, external API plugins which automatically request API access, and other privileged instances.  The admin role has access to all endpoints.";
+        rolehelp = uiI18n('settings.api_role_admin',
+            'The admin role is assigned to the primary web interface, external API plugins which automatically request API access, and other privileged instances.  The admin role has access to all endpoints.');
     else if (role === "readonly")
-        rolehelp = "The readonly role has access to any endpoint which does not modify data.  It can not issue commands to the Kismet server, configure sources, or alter devices.  The readonly role is well suited for external data gathering from a Kismet server.";
+        rolehelp = uiI18n('settings.api_role_readonly',
+            'The readonly role has access to any endpoint which does not modify data.  It can not issue commands to the Kismet server, configure sources, or alter devices.  The readonly role is well suited for external data gathering from a Kismet server.');
     else if (role === "datasource")
-        rolehelp = "The datasource role allows remote capture over websockets.  This role only has access to the remote capture datasource endpoint.";
+        rolehelp = uiI18n('settings.api_role_datasource',
+            'The datasource role allows remote capture over websockets.  This role only has access to the remote capture datasource endpoint.');
     else if (role === "scanreport")
-        rolehelp = "The scanreport role allows device scan reports.  This role only has access to the scan report endpoint."
+        rolehelp = uiI18n('settings.api_role_scanreport',
+            'The scanreport role allows device scan reports.  This role only has access to the scan report endpoint.');
     else if (role === "ADSB")
-        rolehelp = "The ADSB role allows access to the combined and device-specific ADSB feeds."
+        rolehelp = uiI18n('settings.api_role_adsb',
+            'The ADSB role allows access to the combined and device-specific ADSB feeds.');
     else if (role === "__explain__") {
-        rolehelp = "<p>Kismet uses a basic role system to restrict access to API endpoints.  The default roles are:";
-        rolehelp += "<p>&quot;admin&quot; which has access to all API endpoints.";
-        rolehelp += "<p>&quot;readonly&quot; which only has access to endpoints which do not alter devices or change the configuration of the server";
-        rolehelp += "<p>&quot;datasource&quot; which is used for websockets based remote capture and may not access any other endpoints";
-        rolehelp += "<p>&quot;scanreport&quot; which is used for reporting scanning-mode devices";
-        rolehelp += "<p>&quot;ADSB&quot; which is used for sharing ADSB feeds";
-        rolehelp += "<p>Plugins or other code may define other roles.";
-
-        role = "Kismet API Roles";
+        rolehelp = uiI18n('settings.api_roles_explain_body',
+            '<p>Kismet uses a basic role system to restrict access to API endpoints.  The default roles are:' +
+            '<p>&quot;admin&quot; which has access to all API endpoints.' +
+            '<p>&quot;readonly&quot; which only has access to endpoints which do not alter devices or change the configuration of the server' +
+            '<p>&quot;datasource&quot; which is used for websockets based remote capture and may not access any other endpoints' +
+            '<p>&quot;scanreport&quot; which is used for reporting scanning-mode devices' +
+            '<p>&quot;ADSB&quot; which is used for sharing ADSB feeds' +
+            '<p>Plugins or other code may define other roles.');
+        panelRole = uiI18n('settings.api_roles_explain_title', 'Kismet API Roles');
     }
 
     var h = $(window).height() / 4;
@@ -2548,16 +2600,22 @@ function show_role_help(role) {
     if (h < 200)
         h = $(window).height() - 5;
 
+    var bodyHtml = '<div style="padding: 10px;"><h3>' + panelRole + '</h3>';
+    if (orig === "__explain__")
+        bodyHtml += rolehelp + '</div>';
+    else
+        bodyHtml += '<p>' + rolehelp + '</p></div>';
+
     $.jsPanel({
         id: "item-help",
-        headerTitle: `Role: ${role}`,
+        headerTitle: uiI18nOpts('settings.api_role_title', { role: panelRole }, 'Role: ' + panelRole),
         headerControls: {
             controls: 'closeonly',
             iconfont: 'jsglyph',
         },
         contentSize: `${w} auto`,
         paneltype: 'modal',
-        content: `<div style="padding: 10px;"><h3>${role}</h3><p>${rolehelp}`,
+        content: bodyHtml,
     })
     .reposition({
         my: 'center',
@@ -2574,7 +2632,8 @@ function delete_role(rolename, elem) {
         $('<button>', {
             'style': 'background-color: #DDAAAA',
         })
-        .html(`Delete role &quot;${rolename}&quot;`)
+        .html(uiI18nOpts('settings.api_delete_role', { role: rolename },
+            'Delete role &quot;' + rolename + '&quot;'))
         .button()
         .on('click', function() {
             var pd = {
@@ -2598,7 +2657,7 @@ function delete_role(rolename, elem) {
                             $('<td>', {
                                 'colspan': 4
                             })
-                            .html("<i>No API keys defined...</i>")
+                            .html(uiI18n('settings.api_none', '<i>No API keys defined...</i>'))
                         )
                     );
                 }
@@ -2621,15 +2680,20 @@ function make_role_delete_closure(rolename, elem) {
 kismet_ui_settings.AddSettingsPane({
     id: 'base_api_logins',
     listTitle: "API Keys",
+    i18nKey: 'settings.pane_api_keys',
     create: function(elem) {
-        elem.append($("p").html("Fetching API data..."));
+        elem.append($("p").html(uiI18n('settings.api_fetching', 'Fetching API data...')));
 
         $.get(local_uri_prefix + "auth/apikey/list.json")
         .done(function(data) {
             data = kismet.sanitizeObject(data);
             elem.empty();
 
-            elem.append('<form><fieldset id="fs_apikeys"><legend>API Keys</legend><table class="apitable" id="apikeytable"></table></fieldset></form>');
+            elem.append($('<form>').append(
+                $('<fieldset>', { id: 'fs_apikeys' })
+                    .append($('<legend>').html(uiI18n('settings.api_fs_legend', 'API Keys')))
+                    .append($('<table>', { class: 'apitable', id: 'apikeytable' }))
+            ));
 
             let tb = $('#apikeytable', elem);
 
@@ -2639,19 +2703,19 @@ kismet_ui_settings.AddSettingsPane({
                     $('<th>', {
                         'class': 'apith',
                         'style': 'width: 16em;',
-                    }).html("Name")
+                    }).html(uiI18n('settings.api_col_name', 'Name'))
                 )
                 .append(
                     $('<th>', {
                         'class': 'apith',
                         'style': 'width: 8em;',
-                    }).html("Role")
+                    }).html(uiI18n('settings.api_col_role', 'Role'))
                 )
                 .append(
                     $('<th>', {
                         'class': 'apith',
                         'style': 'width: 30em;',
-                    }).html("Key")
+                    }).html(uiI18n('settings.api_col_key', 'Key'))
                 )
                 .append(
                     $('<th>')
@@ -2667,7 +2731,7 @@ kismet_ui_settings.AddSettingsPane({
                         $('<td>', {
                             'colspan': 4
                         })
-                        .html("<i>No API keys defined...</i>")
+                        .html(uiI18n('settings.api_none', '<i>No API keys defined...</i>'))
                     )
                 );
             }
@@ -2681,7 +2745,8 @@ kismet_ui_settings.AddSettingsPane({
                 if ('kismet.httpd.auth.token' in user) {
                     key = user['kismet.httpd.auth.token'];
                 } else {
-                    key = "<i>Viewing auth tokens is disabled in the Kismet configuration.</i>";
+                    key = uiI18n('settings.api_token_disabled',
+                        '<i>Viewing auth tokens is disabled in the Kismet configuration.</i>');
                 }
 
                 var tr =
@@ -2749,13 +2814,13 @@ kismet_ui_settings.AddSettingsPane({
                         $('<button>', {
                             'id': 'addapikeybutton',
                             'class': 'padded',
-                        }).html(`<i class="fa fa-plus"></i> Create API Key`)
+                        }).html('<i class="fa fa-plus"></i> ' + uiI18n('settings.api_create_key', 'Create API Key'))
                     )
                     .append(
                         $('<label>', {
                             'for': 'addapiname',
                             'class': 'padded',
-                        }).html("Name")
+                        }).html(uiI18n('settings.api_label_name', 'Name'))
                     )
                     .append(
                         $('<input>', {
@@ -2769,7 +2834,7 @@ kismet_ui_settings.AddSettingsPane({
                         $('<label>', {
                             'for': 'addapirole',
                             'class': 'padded',
-                        }).html("Role")
+                        }).html(uiI18n('settings.api_label_role', 'Role'))
                     )
                     .append(
                         $('<select>', {
@@ -2780,32 +2845,32 @@ kismet_ui_settings.AddSettingsPane({
                             $('<option>', {
                                 'value': 'readonly',
                                 'selected': 'true',
-                            }).html("readonly")
+                            }).html(uiI18n('settings.api_role_opt_readonly', 'readonly'))
                         )
                         .append(
                             $('<option>', {
                                 'value': 'datasource',
-                            }).html("datasource")
+                            }).html(uiI18n('settings.api_role_opt_datasource', 'datasource'))
                         )
                         .append(
                             $('<option>', {
                                 'value': 'scanreport',
-                            }).html("scanreport")
+                            }).html(uiI18n('settings.api_role_opt_scanreport', 'scanreport'))
                         )
                         .append(
                             $('<option>', {
                                 'value': 'admin',
-                            }).html("admin")
+                            }).html(uiI18n('settings.api_role_opt_admin', 'admin'))
                         )
                         .append(
                             $('<option>', {
                                 'value': 'ADSB',
-                            }).html("ADSB")
+                            }).html(uiI18n('settings.api_role_opt_adsb', 'ADSB'))
                         )
                         .append(
                             $('<option>', {
                                 'value': 'custom',
-                            }).html("<i>custom</i>")
+                            }).html(uiI18n('settings.api_role_opt_custom', '<i>custom</i>'))
                         )
                     )
                     .append(
@@ -2835,24 +2900,24 @@ kismet_ui_settings.AddSettingsPane({
                 .button()
                 .on('click', function() {
                     var name = $('#addapiname').val();
-                    var role_select = $('#addapirole option:selected').text();
+                    var role_val = $('#addapirole').val();
                     var role_input = $('#addapiroleother').val();
 
                     if (name.length == 0) {
-                        $('#addapierror').show().html("Missing name.");
+                        $('#addapierror').show().html(uiI18n('settings.api_missing_name', 'Missing name.'));
                         return;
                     }
 
-                    if (role_select === "custom" && role_input.length == 0) {
-                        $('#addapierror').show().html("Missing custom role.");
+                    if (role_val === "custom" && role_input.length == 0) {
+                        $('#addapierror').show().html(uiI18n('settings.api_missing_role', 'Missing custom role.'));
                         return;
                     }
 
                     $('#addapierror').hide();
 
-                    var role = role_select;
+                    var role = role_val;
 
-                    if (role_select === "custom")
+                    if (role_val === "custom")
                         role = role_input;
 
                     var pd = {
@@ -2866,7 +2931,7 @@ kismet_ui_settings.AddSettingsPane({
                     $.post(local_uri_prefix + "auth/apikey/generate.cmd", postdata)
                     .fail(function(response) {
                         var rt = kismet.sanitizeObject(response.responseText);
-                        $('#addapierror').show().html(`Failed to add API key: ${rt}`);
+                        $('#addapierror').show().html(uiI18n('settings.api_add_fail', 'Failed to add API key: ') + rt);
                     })
                     .done(function(data) {
                         var key = kismet.sanitizeObject(data);
@@ -2931,7 +2996,7 @@ kismet_ui_settings.AddSettingsPane({
                 });
 
             $('#addapirole', adddiv).on('change', function(e) {
-                var val = $("#addapirole option:selected" ).text();
+                var val = $("#addapirole").val();
 
                 if (val === "custom") {
                     $(this).hide();

@@ -10,6 +10,14 @@ var local_uri_prefix = "";
 if (typeof(KISMET_URI_PREFIX) !== 'undefined')
     local_uri_prefix = KISMET_URI_PREFIX;
 
+function uiI18n(key, fallback) {
+    if (typeof kismet_i18n !== "undefined" && kismet_i18n.t) {
+        var s = kismet_i18n.t(key);
+        if (s && s !== key) return s;
+    }
+    return fallback;
+}
+
 var exports = {};
 
 exports.window_visible = true;
@@ -883,7 +891,7 @@ kismet_ui_settings.AddSettingsPane({
                 })
                 .append(
                     $('<legend>', {})
-                    .html('Device Row Highlights')
+                    .html(uiI18n('settings.device_rows_fs_legend', 'Device Row Highlights'))
                 )
                 .append(
                     $('<table>', {
@@ -897,15 +905,15 @@ kismet_ui_settings.AddSettingsPane({
                         )
                         .append(
                             $('<th>')
-                            .html("Name")
+                            .html(uiI18n('settings.table_name', 'Name'))
                         )
                         .append(
                             $('<th>')
-                            .html("Color")
+                            .html(uiI18n('settings.table_color', 'Color'))
                         )
                         .append(
                             $('<th>')
-                            .html("Description")
+                            .html(uiI18n('settings.table_description', 'Description'))
                         )
                     )
                 )

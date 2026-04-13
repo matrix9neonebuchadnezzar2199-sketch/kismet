@@ -5,6 +5,14 @@ let local_uri_prefix = "";
 if (typeof(KISMET_URI_PREFIX) !== 'undefined')
     local_uri_prefix = KISMET_URI_PREFIX;
 
+function radI18n(key, fallback) {
+    if (typeof kismet_i18n !== "undefined" && kismet_i18n.t) {
+        var s = kismet_i18n.t(key);
+        if (s && s !== key) return s;
+    }
+    return fallback;
+}
+
 $('<link>')
     .attr({
         type: 'text/css', 
@@ -87,16 +95,27 @@ kismet_ui_sidebar.AddSidebarItem({
 kismet_ui_settings.AddSettingsPane({
     id: 'radiation',
     listTitle: 'Radiation Sensors',
+    i18nKey: 'settings.pane_radiation',
     create: (elem) => {
-        elem.append('<form><fieldset id="fs_rad"><legend>Radiation Sensors</legend><div id="radconfig"></div></fieldset></form>');
+        elem.append($('<form>').append(
+            $('<fieldset>', { id: 'fs_rad' })
+                .append($('<legend>').html(radI18n('settings.radiation_fs_legend', 'Radiation Sensors')))
+                .append($('<div>', { id: 'radconfig' }))
+        ));
 
         let config = $('#radconfig', elem);
 
-        config.append('<p><b>CAUTION</b>: Radiation exposure counts and dosages are dependent on the radiation detector used.  Most radiation detectors have maximum speeds at which detection can reliably occur.  Each radiation detectors <i>must be properly calibrated</i> and properly oriented for detection.</p>');
-        config.append('<p><i>BE SAFE.</i>  <b>NEVER</b> trust the Kismet display of radiation data for personal safety!</p>');
+        config.append($('<p>').html(radI18n('settings.radiation_caution',
+            '<b>CAUTION</b>: Radiation exposure counts and dosages are dependent on the radiation detector used. Most radiation detectors have maximum speeds at which detection can reliably occur. Each radiation detector <i>must be properly calibrated</i> and properly oriented for detection.')));
+        config.append($('<p>').html(radI18n('settings.radiation_safe',
+            '<i>BE SAFE.</i> <b>NEVER</b> trust the Kismet display of radiation data for personal safety!')));
 
-        config.append('<div><input type="checkbox" id="r_showcps"><label for="r_showcps">Show counts per second in toolbar</label></div>');
-        config.append('<div><input type="checkbox" id="r_showusv"><label for="r_showusv">Show uSv per second in toolbar</labeln></div>');
+        config.append($('<div>')
+            .append($('<input>', { type: 'checkbox', id: 'r_showcps' }))
+            .append($('<label>', { for: 'r_showcps' }).html(radI18n('settings.radiation_show_cps', 'Show counts per second in toolbar'))));
+        config.append($('<div>')
+            .append($('<input>', { type: 'checkbox', id: 'r_showusv' }))
+            .append($('<label>', { for: 'r_showusv' }).html(radI18n('settings.radiation_show_usv', 'Show uSv per second in toolbar'))));
 
         let show_cps = kismet.getStorage('kismet.ui.radiation.showcps', false);
         let show_usv = kismet.getStorage('kismet.ui.radiation.showusv', false);

@@ -12,6 +12,14 @@ var local_uri_prefix = "";
 if (typeof(KISMET_URI_PREFIX) !== 'undefined')
     local_uri_prefix = KISMET_URI_PREFIX;
 
+function tSettings(key, fallback) {
+    if (typeof kismet_i18n !== "undefined" && kismet_i18n.t) {
+        var s = kismet_i18n.t(key);
+        if (s && s !== key) return s;
+    }
+    return fallback;
+}
+
 // Flag we're still loading
 exports.load_complete = 0;
 
@@ -198,11 +206,11 @@ function checkClose(transfer = null) {
                 $('<div>', { 
                     class: 'k-s-alert-header'
                 })
-                .html("Settings changed")
+                .html(tSettings('settings.unsaved_title', 'Settings changed'))
             )
             .append(
                 $('<div>')
-                .html("Would you like to save the changes?")
+                .html(tSettings('settings.unsaved_prompt', 'Would you like to save the changes?'))
             )
         )
         .append(
@@ -213,7 +221,7 @@ function checkClose(transfer = null) {
                 $('<button>', {
                     class: 'k-s-button-reset'
                 })
-                .text("Don't Save")
+                .text(tSettings('settings.dont_save', "Don't Save"))
                 .button()
                 .on('click', function() {
                     exports.SettingsModified(false);
@@ -229,7 +237,7 @@ function checkClose(transfer = null) {
                 $('<button>', {
                     class: 'k-s-button-save'
                 })
-                .text("Save Changes")
+                .text(tSettings('settings.save_changes', 'Save Changes'))
                 .button()
                 .on('click', function() {
                     if (selected_item != null) {
