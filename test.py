@@ -438,6 +438,17 @@ class TestWhitelistLogic(unittest.TestCase):
             r'([0-9A-Fa-f]{2}[:\-]){5}|mac.*valid|validate.*mac|MAC.*format',
             "MACアドレスバリデーションが見つかりません")
 
+    def test_whitelist_set_tag_post_format(self):
+        """set_tag.cmd は Kismet HTTP が期待する json= フォームPOSTであること"""
+        path = BASE_DIR / "http_data/js/kismet_whitelist_api.js"
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        self.assertIn('set_tag.cmd', content)
+        self.assertIn('"json=" + encodeURIComponent(JSON.stringify(jscmd))', content,
+            "set_tag は application/x-www-form-urlencoded の json= ペイロードである必要があります")
+        self.assertNotRegex(content, r'\$\.post\s*\(\s*base\s*,\s*JSON\.stringify',
+            "生JSONを $.post の data に渡すと Content-Type と不一致でサーバーが失敗します")
+
     def test_whitelist_csv_column_mapping(self):
         """CSVカラムマッピングが定義されているか"""
         path = BASE_DIR / "http_data/js/kismet_whitelist_api.js"

@@ -211,9 +211,16 @@ function trySyncTags(entry) {
             if (!data || !data.length) return;
             var key = data[0]["kismet.device.base.key"];
             if (!key) return;
-            var base = local_uri_prefix + "devices/by-key/" + encodeURIComponent(key) + "/set_tag.cmd";
+            /* Same URL/body as kismet.ui.base.js notes editable: raw key path; POST x-www-form-urlencoded json=… */
+            var base = local_uri_prefix + "devices/by-key/" + key + "/set_tag.cmd";
             function postTag(tagname, tagvalue) {
-                $.post(base, JSON.stringify({ tagname: tagname, tagvalue: tagvalue }))
+                var v = (tagvalue === undefined || tagvalue === null) ? "" : String(tagvalue);
+                if (typeof v.escapeSpecialChars === "function") {
+                    v = v.escapeSpecialChars();
+                }
+                var jscmd = { tagname: tagname, tagvalue: v };
+                var postdata = "json=" + encodeURIComponent(JSON.stringify(jscmd));
+                $.post(base, postdata, "json")
                     .fail(function (xhr) {
                         syncWarnThrottled("set_tag:" + mac + ":" + tagname, function () {
                             console.warn("[whitelist] set_tag failed", tagname, mac, xhr && xhr.status);
