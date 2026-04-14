@@ -1969,6 +1969,8 @@ exports.InitializeDeviceTable = function(element) {
                         return;
                     }
                     if (this.checked) {
+                        deviceTabulator.deselectRow();
+                        deviceListWhitelistPick.clear();
                         deviceTabulator.selectRow();
                         deviceTabulator.getRows().forEach(function (r) {
                             syncDeviceListWhitelistPickRow(r, true);
@@ -1979,12 +1981,7 @@ exports.InitializeDeviceTable = function(element) {
                         }, 0);
                     } else {
                         deviceTabulator.deselectRow();
-                        deviceTabulator.getRows().forEach(function (r) {
-                            var dk = deviceListWhitelistPickKey(r.getData());
-                            if (dk) {
-                                deviceListWhitelistPick.delete(dk);
-                            }
-                        });
+                        deviceListWhitelistPick.clear();
                         updateDeviceListWlToolbar();
                         updateDeviceListWlSelectAllCheckbox();
                     }

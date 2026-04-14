@@ -310,6 +310,9 @@ function OpenWhitelistPanel() {
         }
         try {
             kismet_whitelist_api.removeBulkFromWhitelist(macs);
+            if (whitelistPanelWrap && whitelistPanelWrap.length) {
+                whitelistPanelWrap.find(".js-wl-sel-all").prop("checked", false).prop("indeterminate", false);
+            }
             refreshTable();
         } catch (eDel) {
             alert(String((eDel && eDel.message) ? eDel.message : eDel) || t("common.error"));
@@ -341,13 +344,12 @@ function OpenWhitelistPanel() {
     wrap.on("change", ".js-wl-sel-all", function () {
         if (!tabulator) return;
         var on = $(this).prop("checked");
-        tabulator.getRows().forEach(function (r) {
-            if (on) {
-                r.select();
-            } else {
-                r.deselect();
-            }
-        });
+        if (on) {
+            tabulator.deselectRow();
+            tabulator.selectRow();
+        } else {
+            tabulator.deselectRow();
+        }
         updateWlBulkSelectionUi();
     });
 
