@@ -43,13 +43,6 @@ window.kismet_enhanced_run_async = function () {
             console.log("[enhanced] i18n initialized, lang=" +
                 (window.i18next ? window.i18next.language : "?"));
             try {
-                if (typeof kismet_ui_unassociated_module !== "undefined" &&
-                    kismet_ui_unassociated_module.registerSidebar) {
-                    kismet_ui_unassociated_module.registerSidebar();
-                    console.log("[enhanced] unassociated sidebar registered");
-                }
-            } catch (e) { console.error("unassociated sidebar", e); }
-            try {
                 if (typeof kismet_ui_whitelist_module !== "undefined" &&
                     kismet_ui_whitelist_module.registerSidebar) {
                     kismet_ui_whitelist_module.registerSidebar();

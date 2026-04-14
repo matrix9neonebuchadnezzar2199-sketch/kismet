@@ -45,7 +45,17 @@
     "qbss_usage_desc": "AP が報告するチャンネル利用率（802.11e QBSS）",
     "qbss_clients": "QBSS 端末数",
     "qbss_clients_desc": "AP が 802.11e QBSS で報告する関連クライアント数",
-    "signal_filter_footer": "電波 ≥ {{thr}} dBm: このページ {{count}} 件（一覧全体 {{total}} 件）"
+    "signal_filter_footer": "電波 ≥ {{thr}} dBm: このページ {{count}} 件（一覧全体 {{total}} 件）",
+    "signal_filter_tag": "電波≥{{thr}}dBm",
+    "active_filters_footer": "このページ {{count}} 件 / 一覧 {{total}} 件 [{{filters}}]",
+    "kind_all": "全種別",
+    "kind_unassoc": "未接続端末のみ",
+    "kind_ap": "AP のみ",
+    "kind_group_hint": "種別で絞り込み（このページの受信行に適用）",
+    "kind_filter_footer": "種別「{{kind}}」: このページ {{count}} 件（一覧全体 {{total}} 件）",
+    "export_csv": "CSV",
+    "export_csv_hint": "表示中の行を UTF-8（BOM付き）CSVで保存します。RFC 4180形式。wireshark.display_filter は802.11キャプチャ向け表示フィルタ用です（バイナリPCAPNGではありません）。",
+    "csv_empty": "書き出す行がありません。フィルタを確認してください。"
   },
   "rowhighlight": {
     "active_label": "アクティブ",

@@ -596,18 +596,11 @@ function renderHtmlTable(rows) {
     });
 }
 
+/** Used by main device list kind filter (sidebar entry removed). */
+exports.isUnassociatedClient = isUnassociatedClient;
+
 exports.registerSidebar = function () {
-    if (typeof kismet_ui_sidebar === "undefined") {
-        console.warn("[unassociated] kismet_ui_sidebar not available");
-        return;
-    }
-    kismet_ui_sidebar.AddSidebarItem({
-        id: "unassociated_clients",
-        listTitle: "<i class=\"fa fa-wifi\"></i> " + t("sidebar.unassociated_clients"),
-        priority: -10,
-        clickCallback: function() { OpenUnassociatedPanel(); }
-    });
-    console.log("[unassociated] sidebar item registered: " + t("sidebar.unassociated_clients"));
+    /* Unassociated clients are filtered on the main Devices tab; no separate sidebar item. */
 };
 
 return exports;

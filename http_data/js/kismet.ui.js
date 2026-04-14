@@ -1250,6 +1250,9 @@ var deviceTableRefreshing = false;
 /** Minimum last signal (dBm) for device list, or null for no filter. Same semantics as unassociated (e.g. -60 means last_signal &gt;= -60). */
 var deviceListMinSignal = null;
 
+/** Device kind filter: all | unassoc | ap */
+var deviceListKindFilter = 'all';
+
 /** Rows shown after optional client-side signal filter (current page). */
 var deviceTableRowsThisPage = 0;
 
@@ -1270,6 +1273,101 @@ function deviceRowLastSignalDbm(row) {
     return null;
 }
 
+function deviceRowMatchesKind(od, kind) {
+    if (!kind || kind === 'all')
+        return true;
+    if (!od)
+        return false;
+    if (kind === 'ap') {
+        var t = (od['kismet.device.base.type'] || '').toString();
+        if (t.indexOf('Wi-Fi AP') >= 0)
+            return true;
+        if (t.toLowerCase().indexOf('access point') >= 0)
+            return true;
+        return false;
+    }
+    if (kind === 'unassoc') {
+        if (typeof kismet_ui_unassociated_module !== 'undefined' &&
+            typeof kismet_ui_unassociated_module.isUnassociatedClient === 'function') {
+            return kismet_ui_unassociated_module.isUnassociatedClient(od);
+        }
+        return false;
+    }
+    return true;
+}
+
+function csvQuoteCell(val) {
+    var s = (val === undefined || val === null) ? '' : String(val);
+    return '"' + s.replace(/"/g, '""') + '"';
+}
+
+function exportDeviceTableCsv() {
+    if (!deviceTabulator) {
+        return;
+    }
+    var rows = deviceTabulator.getData();
+    if (!rows || rows.length === 0) {
+        var em = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ? kismet_i18n.t('device_list.csv_empty') : 'No rows to export.';
+        try { alert(em); } catch (e) { }
+        return;
+    }
+    var hdr = [
+        'kismet.device.base.key',
+        'wlan.sa (IEEE 802.11 MAC)',
+        'kismet.device.base.type',
+        'kismet.device.base.name',
+        'last_signal_dbm',
+        'kismet.device.base.channel',
+        'kismet.device.base.manuf',
+        'kismet.device.base.last_time (unix)',
+        'wireshark.display_filter'
+    ];
+    var lines = [hdr.map(csvQuoteCell).join(',')];
+    for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var od = r.original_data || {};
+        var mac = (od['kismet.device.base.macaddr'] || '').toString().toLowerCase();
+        var key = (r.device_key || od['kismet.device.base.key'] || '').toString();
+        var typ = (od['kismet.device.base.type'] || '').toString();
+        var nm = (od['kismet.device.base.name'] || '').toString();
+        var sig = deviceRowLastSignalDbm(r);
+        if (sig === null || isNaN(sig))
+            sig = '';
+        var ch = od['kismet.device.base.channel'];
+        if (ch === undefined || ch === null)
+            ch = '';
+        var man = (od['kismet.device.base.manuf'] || '').toString();
+        var lt = od['kismet.device.base.last_time'];
+        if (lt === undefined || lt === null)
+            lt = '';
+        var wdf = '';
+        if (mac && /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i.test(mac)) {
+            wdf = 'wlan.addr == ' + mac;
+        }
+        lines.push([
+            csvQuoteCell(key),
+            csvQuoteCell(mac),
+            csvQuoteCell(typ),
+            csvQuoteCell(nm),
+            csvQuoteCell(sig),
+            csvQuoteCell(ch),
+            csvQuoteCell(man),
+            csvQuoteCell(lt),
+            csvQuoteCell(wdf)
+        ].join(','));
+    }
+    var bom = '\uFEFF';
+    var blob = new Blob([bom + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    var ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    a.download = 'kismet_device_export_' + ts + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 500);
+}
+
 function ScheduleDeviceSummary() {
     if (deviceTid2 != -1)
         clearTimeout(deviceTid2);
@@ -1287,6 +1385,13 @@ function ScheduleDeviceSummary() {
             } else {
                 var msParsed = parseInt(msRaw, 10);
                 deviceListMinSignal = isNaN(msParsed) ? null : msParsed;
+            }
+
+            var kfRaw = kismet.getStorage('kismet.ui.devicelist.kind_filter', '');
+            if (kfRaw === 'unassoc' || kfRaw === 'ap') {
+                deviceListKindFilter = kfRaw;
+            } else {
+                deviceListKindFilter = 'all';
             }
 
             var pageSize = deviceTabulator.getPageSize();
@@ -1398,6 +1503,11 @@ function ScheduleDeviceSummary() {
                             if (s === null || isNaN(s))
                                 return false;
                             return s >= deviceListMinSignal;
+                        });
+                    }
+                    if (deviceListKindFilter && deviceListKindFilter !== 'all') {
+                        procdata = procdata.filter(function(row) {
+                            return deviceRowMatchesKind(row.original_data, deviceListKindFilter);
                         });
                     }
                     deviceTableRowsThisPage = procdata.length;
@@ -1618,6 +1728,49 @@ exports.InitializeDeviceTable = function(element) {
             menu.append(host);
         })(devviewmenu);
 
+        (function appendDeviceListKindFilterBar(menu) {
+            var kf = kismet.getStorage('kismet.ui.devicelist.kind_filter', '');
+            if (kf !== 'unassoc' && kf !== 'ap') {
+                kf = 'all';
+            }
+            deviceListKindFilter = kf;
+            var host = $('<div>', {
+                class: 'device-list-kind-filter-host',
+                title: uiI18n('device_list.kind_group_hint', 'Filter by device role (this page)')
+            });
+            var opts = [
+                { val: 'all', fb: 'All types', key: 'device_list.kind_all' },
+                { val: 'unassoc', fb: 'Unassociated', key: 'device_list.kind_unassoc' },
+                { val: 'ap', fb: 'AP only', key: 'device_list.kind_ap' }
+            ];
+            opts.forEach(function(o) {
+                var lbl = uiI18n(o.key, o.fb);
+                var isActive = (kf === o.val);
+                var btn = $('<button>', { type: 'button', class: 'signal-filter-btn kind-filter-btn' + (isActive ? ' active' : '') })
+                    .text(lbl)
+                    .on('click', function() {
+                        deviceListKindFilter = o.val;
+                        kismet.putStorage('kismet.ui.devicelist.kind_filter', o.val === 'all' ? '' : o.val);
+                        host.find('.kind-filter-btn').removeClass('active');
+                        $(this).addClass('active');
+                        deviceTablePage = 0;
+                        ScheduleDeviceSummary();
+                    });
+                host.append(btn);
+            });
+            menu.append(host);
+        })(devviewmenu);
+
+        devviewmenu.append(
+            $('<button>', {
+                type: 'button',
+                class: 'signal-filter-btn device-list-csv-btn',
+                title: uiI18n('device_list.export_csv_hint', 'Export visible rows as UTF-8 CSV (RFC 4180). wireshark.display_filter is for 802.11 captures; not a PCAPNG file.')
+            })
+                .text(uiI18n('device_list.export_csv', 'CSV'))
+                .on('click', function() { exportDeviceTableCsv(); })
+        );
+
         devviewmenu.append(
             $('<form>', { action: '#' }).append($('<span>', { id: 'device_view_holder' })),
             $('<input>', {
@@ -1682,13 +1835,27 @@ exports.InitializeDeviceTable = function(element) {
                 return "Loading..."
             }
 
-            if (deviceListMinSignal !== null && deviceListMinSignal !== '') {
-                var sf = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ? kismet_i18n.t('device_list.signal_filter_footer', {
+            var hasSig = (deviceListMinSignal !== null && deviceListMinSignal !== '');
+            var hasKind = (deviceListKindFilter && deviceListKindFilter !== 'all');
+            if (hasSig || hasKind) {
+                var parts = [];
+                if (hasSig) {
+                    parts.push((typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ?
+                        kismet_i18n.t('device_list.signal_filter_tag', { thr: deviceListMinSignal }) :
+                        ('≥' + deviceListMinSignal + ' dBm'));
+                }
+                if (hasKind) {
+                    var kl = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ? kismet_i18n.t(
+                        deviceListKindFilter === 'ap' ? 'device_list.kind_ap' : 'device_list.kind_unassoc'
+                    ) : deviceListKindFilter;
+                    parts.push(kl);
+                }
+                var filt = parts.join(' · ');
+                return (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ? kismet_i18n.t('device_list.active_filters_footer', {
                     count: deviceTableRowsThisPage,
-                    thr: deviceListMinSignal,
-                    total: deviceTableTotal
-                }) : ('Signal ≥ ' + deviceListMinSignal + ' dBm: ' + deviceTableRowsThisPage + ' on this page / ' + deviceTableTotal + ' in view');
-                return sf;
+                    total: deviceTableTotal,
+                    filters: filt
+                }) : (deviceTableRowsThisPage + ' / ' + deviceTableTotal + ' [' + filt + ']');
             }
 
             var frow = pageSize * deviceTablePage;

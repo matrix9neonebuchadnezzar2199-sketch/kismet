@@ -45,7 +45,17 @@
     "qbss_usage_desc": "Reported channel utilization (802.11e QBSS)",
     "qbss_clients": "QBSS #",
     "qbss_clients_desc": "Associated client count (reported by AP via 802.11e QBSS)",
-    "signal_filter_footer": "Signal ≥ {{thr}} dBm: {{count}} on this page ({{total}} total in view)"
+    "signal_filter_footer": "Signal ≥ {{thr}} dBm: {{count}} on this page ({{total}} total in view)",
+    "signal_filter_tag": "Signal≥{{thr}} dBm",
+    "active_filters_footer": "{{count}} on page / {{total}} in view [{{filters}}]",
+    "kind_all": "All types",
+    "kind_unassoc": "Unassociated only",
+    "kind_ap": "AP only",
+    "kind_group_hint": "Filter by device role (applies to rows on this page)",
+    "kind_filter_footer": "Type \"{{kind}}\": {{count}} on this page ({{total}} total in view)",
+    "export_csv": "CSV",
+    "export_csv_hint": "Save visible rows as UTF-8 CSV with BOM (RFC 4180). wireshark.display_filter is for 802.11 display filters; this file is not binary PCAPNG.",
+    "csv_empty": "Nothing to export. Adjust filters or wait for data."
   },
   "rowhighlight": {
     "active_label": "Active",
