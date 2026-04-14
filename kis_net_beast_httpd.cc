@@ -23,6 +23,12 @@
 #include <random>
 
 #include <stdio.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#endif
 
 #include "globalregistry.h"
 
@@ -31,6 +37,142 @@
 #include "configfile.h"
 #include "messagebus.h"
 #include "util.h"
+
+namespace {
+
+bool http_root_has_index(const std::string& dir) {
+    if (dir.empty())
+        return false;
+
+    std::string p = dir;
+    while (!p.empty() && (p.back() == '/' || p.back() == '\\'))
+        p.pop_back();
+
+    p += "/index.html";
+
+    struct stat st;
+    return stat(p.c_str(), &st) == 0 && S_ISREG(st.st_mode);
+}
+
+std::string join_http_path(const std::string& base, const std::string& leaf) {
+    if (base.empty())
+        return leaf;
+
+    std::string b = base;
+    while (!b.empty() && (b.back() == '/' || b.back() == '\\'))
+        b.pop_back();
+
+    std::string l = leaf;
+    while (!l.empty() && (l.front() == '/' || l.front() == '\\'))
+        l.erase(0, 1);
+
+    return b + "/" + l;
+}
+
+std::string dirname_of_path(const std::string& path) {
+    if (path.empty())
+        return {};
+
+    auto pos = path.find_last_of("/\\");
+    if (pos == std::string::npos)
+        return {};
+
+    if (pos == 0)
+        return path.substr(0, 1);
+
+    return path.substr(0, pos);
+}
+
+bool read_executable_path(std::string& out_path) {
+#if defined(__linux__)
+    char buf[4096];
+    const ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    if (len <= 0)
+        return false;
+    buf[len] = 0;
+    out_path.assign(buf);
+    return true;
+#elif defined(__APPLE__)
+    char buf[4096];
+    uint32_t sz = sizeof(buf);
+    if (_NSGetExecutablePath(buf, &sz) != 0)
+        return false;
+    out_path.assign(buf);
+    return true;
+#else
+    (void) out_path;
+    return false;
+#endif
+}
+
+std::string autodetect_httpd_home(const std::string& configured) {
+    auto pick = [&](const std::string& cand, const char *reason) -> std::string {
+        if (!configured.empty() && cand != configured)
+            _MSG_INFO("httpd_home {} has no index.html; using {} ({})",
+                    configured, cand, reason);
+        else
+            _MSG_INFO("Using {} for web UI static files ({})", cand, reason);
+        return cand;
+    };
+
+    // Prefer ./http_data under the current working directory when it is a complete UI tree.
+    // This lets developers (or Kali users who cloned the repo) get the in-tree web UI by
+    // running `kismet` from the repository root without editing kismet_site.conf, even when
+    // the packaged httpd_home also contains an older index.html.
+    char cwdbuf[4096];
+    if (getcwd(cwdbuf, sizeof(cwdbuf)) != nullptr) {
+        const std::string cwd_http = join_http_path(std::string(cwdbuf), "http_data");
+        if (http_root_has_index(cwd_http)) {
+            if (configured.empty()) {
+                _MSG_INFO("Using {} for web UI static files (http_data under current working directory)",
+                        cwd_http);
+            } else if (cwd_http != configured) {
+                if (http_root_has_index(configured)) {
+                    _MSG_INFO("Using {} instead of configured httpd_home {} "
+                            "(http_data next to working directory takes precedence)",
+                            cwd_http, configured);
+                } else {
+                    _MSG_INFO("httpd_home {} has no index.html; using {}", configured, cwd_http);
+                }
+            }
+            return cwd_http;
+        }
+    }
+
+    if (http_root_has_index(configured))
+        return configured;
+
+    std::string exepath;
+    if (read_executable_path(exepath)) {
+        const std::string exedir = dirname_of_path(exepath);
+        static const char *const rels[] = {"http_data", "../http_data", "../../http_data"};
+        for (const char *rel : rels) {
+            const std::string cand = join_http_path(exedir, rel);
+            if (http_root_has_index(cand))
+                return pick(cand, "http_data relative to kismet binary");
+        }
+    }
+
+    if (const char *envhome = getenv("KISMET_HTTP_DATA")) {
+        const std::string cand(envhome);
+        if (http_root_has_index(cand))
+            return pick(cand, "KISMET_HTTP_DATA");
+    }
+
+    if (!configured.empty()) {
+        if (!http_root_has_index(configured)) {
+            _MSG_ERROR("httpd_home {} has no index.html; static UI may be unavailable. "
+                    "Run kismet from the source tree (so ./http_data is found), set httpd_home in "
+                    "~/.kismet/kismet_site.conf, or set KISMET_HTTP_DATA to your http_data path.",
+                    configured);
+        }
+        return configured;
+    }
+
+    return "";
+}
+
+} // namespace
 
 const std::string kis_net_beast_httpd::LOGON_ROLE{"admin"};
 const std::string kis_net_beast_httpd::ANY_ROLE{"any"};
@@ -219,7 +361,7 @@ void kis_net_beast_httpd::trigger_deferred_startup() {
     redirect_unknown_ = redirect_unknown_target_.length();
 
     auto http_data_dir =
-        Globalreg::globalreg->kismet_config->fetch_opt_path("httpd_home", "");
+            autodetect_httpd_home(Globalreg::globalreg->kismet_config->fetch_opt_path("httpd_home", ""));
     if (http_data_dir == "") {
         _MSG_ERROR("No httpd_home found in the Kismet configs, disabling static file serving. "
                 "This will disable the webui entirely, however the REST endpoints will still "
