@@ -18,6 +18,46 @@ function t(k, o) {
 }
 
 var tabulator = null;
+/** jQuery wrapper root of the open whitelist panel (toolbar + table); cleared on panel close */
+var whitelistPanelWrap = null;
+var WHITELIST_JSPANEL_REF = "__kismetWhitelistJspanel";
+
+function closeWhitelistPanelIfOpen() {
+    if (typeof window === "undefined") {
+        return;
+    }
+    var p = window[WHITELIST_JSPANEL_REF];
+    if (p && typeof p.close === "function") {
+        try {
+            p.close();
+        } catch (e0) {
+            /* ignore */
+        }
+    }
+    window[WHITELIST_JSPANEL_REF] = null;
+}
+
+function getWlSelectedRowDatas() {
+    if (!tabulator) return [];
+    try {
+        if (typeof tabulator.getSelectedData === "function") {
+            var d = tabulator.getSelectedData();
+            if (d && d.length) return d;
+        }
+    } catch (e1) {
+        /* ignore */
+    }
+    try {
+        if (typeof tabulator.getSelectedRows === "function") {
+            return tabulator.getSelectedRows().map(function (r) {
+                return r.getData();
+            });
+        }
+    } catch (e2) {
+        /* ignore */
+    }
+    return [];
+}
 
 function categoryOptions() {
     return [
@@ -79,13 +119,11 @@ function validateMac(m) {
 }
 
 function updateWlBulkSelectionUi() {
-    var n = tabulator ? tabulator.getSelectedData().length : 0;
-    var lbl = $("#wl-selected-label");
-    if (lbl.length) {
-        lbl.text(t("whitelist.selected_count", { count: n }));
-    }
-    $("#wl-delete-selected-btn").prop("disabled", n === 0);
-    var cb = document.getElementById("wl-sel-all-page");
+    if (!whitelistPanelWrap || !whitelistPanelWrap.length) return;
+    var n = getWlSelectedRowDatas().length;
+    whitelistPanelWrap.find(".js-wl-selected-count").text(t("whitelist.selected_count", { count: n }));
+    whitelistPanelWrap.find(".js-wl-delete-selected").prop("disabled", n === 0);
+    var cb = whitelistPanelWrap.find(".js-wl-sel-all")[0];
     if (!cb || !tabulator) return;
     var rows = tabulator.getRows();
     if (!rows.length) {
@@ -112,7 +150,13 @@ function refreshTable() {
 }
 
 function OpenWhitelistPanel() {
-    var wrap = $("<div>");
+    closeWhitelistPanelIfOpen();
+
+    var wrap = $("<div>", { class: "kismet-whitelist-panel-wrap" });
+    var thisWrap = wrap;
+    whitelistPanelWrap = wrap;
+    var tableHostId = "whitelist-table-h-" + Date.now();
+    var myTabulator = null;
     var toolbar = $("<div>", { class: "whitelist-toolbar" });
     toolbar.append($("<button>", { type: "button", class: "btn btn-primary" }).text(t("whitelist.add_single")).on("click", function () {
         openEditDialog(null);
@@ -133,6 +177,7 @@ function OpenWhitelistPanel() {
         URL.revokeObjectURL(a.href);
     }));
     var search = $("<input>", { type: "search", placeholder: t("common.search") }).on("keyup", function () {
+        if (!tabulator) return;
         var term = $(this).val().toLowerCase();
         tabulator.setFilter(function (data) {
             if (!term) return true;
@@ -142,23 +187,30 @@ function OpenWhitelistPanel() {
     toolbar.append(search);
     wrap.append(toolbar);
 
-    var tableHost = $("<div>", { id: "whitelist-table-host" });
+    var tableHost = $("<div>", { id: tableHostId });
     wrap.append(tableHost);
 
     var bulk = $("<div>", { class: "whitelist-toolbar whitelist-bulk-toolbar" });
     bulk.append($("<label>", { class: "whitelist-sel-all-wrap" }).append(
-        $("<input>", { type: "checkbox", id: "wl-sel-all-page" })
+        $("<input>", { type: "checkbox", class: "js-wl-sel-all" })
     ).append($("<span>").text(" " + t("whitelist.select_all"))));
-    bulk.append($("<span>", { id: "wl-selected-label", class: "wl-selected-count" })
+    bulk.append($("<span>", { class: "js-wl-selected-count wl-selected-count" })
         .text(t("whitelist.selected_count", { count: 0 })));
     bulk.append($("<button>", {
         type: "button",
-        class: "btn",
-        id: "wl-delete-selected-btn"
+        class: "btn js-wl-delete-selected"
     }).text(t("whitelist.delete_selected")).prop("disabled", true).on("click", function () {
         if (!confirm(t("whitelist.confirm_delete"))) return;
-        var rows = tabulator.getSelectedData();
-        var macs = rows.map(function (r) { return r.mac; });
+        if (!tabulator) return;
+        var datas = getWlSelectedRowDatas();
+        var macs = datas.map(function (r) {
+            return r && r.mac;
+        }).filter(function (m) {
+            return m && String(m).trim();
+        });
+        if (!macs.length) {
+            return;
+        }
         kismet_whitelist_api.removeBulkFromWhitelist(macs);
         refreshTable();
     }));
@@ -185,14 +237,47 @@ function OpenWhitelistPanel() {
         reader.readAsText(f);
     });
 
-    $.jsPanel({
+    wrap.on("change", ".js-wl-sel-all", function () {
+        if (!tabulator) return;
+        var on = $(this).prop("checked");
+        tabulator.getRows().forEach(function (r) {
+            if (on) {
+                r.select();
+            } else {
+                r.deselect();
+            }
+        });
+        updateWlBulkSelectionUi();
+    });
+
+    var panel = $.jsPanel({
         headerTitle: t("whitelist.title"),
         content: wrap,
         theme: "dark",
         width: $(window).width() * 0.85,
         height: $(window).height() * 0.75,
+        onclosed: function () {
+            if (myTabulator) {
+                try {
+                    myTabulator.destroy();
+                } catch (eD) {
+                    /* ignore */
+                }
+                if (tabulator === myTabulator) {
+                    tabulator = null;
+                }
+                myTabulator = null;
+            }
+            if (whitelistPanelWrap && whitelistPanelWrap.length && thisWrap.length &&
+                whitelistPanelWrap[0] === thisWrap[0]) {
+                whitelistPanelWrap = null;
+            }
+            if (typeof window !== "undefined" && window[WHITELIST_JSPANEL_REF] === panel) {
+                window[WHITELIST_JSPANEL_REF] = null;
+            }
+        },
         callback: function () {
-            tabulator = new Tabulator("#whitelist-table-host", {
+            myTabulator = new Tabulator("#" + tableHostId, {
                 data: kismet_whitelist_api.getWhitelist(),
                 layout: "fitColumns",
                 selectableRows: true,
@@ -236,19 +321,15 @@ function OpenWhitelistPanel() {
                     }
                 ]
             });
-            $(document).off("change.wlSelAll", "#wl-sel-all-page").on("change.wlSelAll", "#wl-sel-all-page", function () {
-                if (!tabulator) return;
-                var on = $(this).prop("checked");
-                tabulator.getRows().forEach(function (r) {
-                    if (on) r.select(); else r.deselect();
-                });
-                updateWlBulkSelectionUi();
-            });
+            tabulator = myTabulator;
             tabulator.on("rowSelected", updateWlBulkSelectionUi);
             tabulator.on("rowDeselected", updateWlBulkSelectionUi);
             tabulator.on("tableBuilt", updateWlBulkSelectionUi);
         }
     });
+    if (typeof window !== "undefined") {
+        window[WHITELIST_JSPANEL_REF] = panel;
+    }
 }
 
 function openEditDialog(existing) {
