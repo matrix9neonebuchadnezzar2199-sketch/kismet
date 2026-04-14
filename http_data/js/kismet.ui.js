@@ -333,6 +333,9 @@ exports.AddDeviceColumn = (id, options) => {
     if ('titleKey' in options)
         coldef['titleKey'] = options['titleKey'];
 
+    if ('descriptionKey' in options)
+        coldef['descriptionKey'] = options['descriptionKey'];
+
     device_columnlist2.set(id, coldef);
 }
 
@@ -941,7 +944,13 @@ kismet_ui_settings.AddSettingsPane({
                 )
                 .append(
                     $('<td>')
-                    .html(('label' in rh && rh['label']) ? rh['label'] : rh['name'])
+                    .html((function() {
+                        if ('labelKey' in rh && rh['labelKey']) {
+                            return uiI18n(rh['labelKey'],
+                                ('label' in rh && rh['label']) ? rh['label'] : rh['name']);
+                        }
+                        return ('label' in rh && rh['label']) ? rh['label'] : rh['name'];
+                    })())
                 )
                 .append(
                     $('<td>')
@@ -955,7 +964,12 @@ kismet_ui_settings.AddSettingsPane({
                 )
                 .append(
                     $('<td>')
-                    .html(rh['description'])
+                    .html((function() {
+                        if ('descriptionKey' in rh && rh['descriptionKey']) {
+                            return uiI18n(rh['descriptionKey'], rh['description']);
+                        }
+                        return rh['description'];
+                    })())
                 );
 
             $('#devicerow_table', elem).append(row);
@@ -1233,6 +1247,9 @@ var deviceTableTotalPages = 0;
 var deviceTableRefreshBlock = false;
 var deviceTableRefreshing = false;
 
+/** Minimum last signal (dBm) for device list, or null for no filter. Same semantics as unassociated (e.g. -60 means last_signal &gt;= -60). */
+var deviceListMinSignal = null;
+
 function ScheduleDeviceSummary() {
     if (deviceTid2 != -1)
         clearTimeout(deviceTid2);
@@ -1243,6 +1260,14 @@ function ScheduleDeviceSummary() {
         if (!deviceTableRefreshing && deviceTabulator != null && exports.window_visible && devicetableElement2.is(":visible")) {
 
             deviceTableRefreshing = true;
+
+            var msRaw = kismet.getStorage('kismet.ui.devicelist.min_signal', '');
+            if (msRaw === '' || msRaw === null) {
+                deviceListMinSignal = null;
+            } else {
+                var msParsed = parseInt(msRaw, 10);
+                deviceListMinSignal = isNaN(msParsed) ? null : msParsed;
+            }
 
             var pageSize = deviceTabulator.getPageSize();
             if (pageSize == 0) {
@@ -1283,6 +1308,10 @@ function ScheduleDeviceSummary() {
             var searchterm = kismet.getStorage('kismet.ui.deviceview.search', "");
             if (searchterm.length > 0) {
                 postdata["search"] = searchterm;
+            }
+
+            if (deviceListMinSignal !== null && deviceListMinSignal !== '') {
+                postdata["min_signal"] = String(deviceListMinSignal);
             }
 
             var viewname = kismet.getStorage('kismet.ui.deviceview.selected', 'all');
@@ -1516,7 +1545,49 @@ exports.InitializeDeviceTable = function(element) {
 
     if ($('#center-device-extras').length == 0) {
         var ph = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ? kismet_i18n.t('common.filter_placeholder') : '\u30d5\u30a3\u30eb\u30bf\u30fc\u2026';
-        var devviewmenu = $('<div id="center-device-extras" style="position: absolute; right: 10px; top: 5px; height: 30px; display: flex;">');
+        var devviewmenu = $('<div id="center-device-extras" style="position: absolute; right: 10px; top: 5px; min-height: 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; max-width: 92%;">');
+
+        (function appendDeviceListSignalFilterBar(menu) {
+            var ms = kismet.getStorage('kismet.ui.devicelist.min_signal', '');
+            if (ms === '' || ms === null) {
+                deviceListMinSignal = null;
+            } else {
+                var pi = parseInt(ms, 10);
+                deviceListMinSignal = isNaN(pi) ? null : pi;
+            }
+            var host = $('<div>', { class: 'device-list-signal-filter-host' });
+            var thresholds = [
+                { val: -60, fb: '\u2265-60 dBm' },
+                { val: -70, fb: '\u2265-70 dBm' },
+                { val: -80, fb: '\u2265-80 dBm' },
+                { val: null, fb: 'All' }
+            ];
+            thresholds.forEach(function(th) {
+                var lbl = uiI18n(th.val === null ? 'signal_filter.show_all' : (
+                    th.val === -60 ? 'signal_filter.above_60' : (
+                        th.val === -70 ? 'signal_filter.above_70' : 'signal_filter.above_80'
+                    )), th.fb);
+                var isActive = (th.val === null && deviceListMinSignal === null) ||
+                    (th.val !== null && deviceListMinSignal === th.val);
+                var btn = $('<button>', { type: 'button', class: 'signal-filter-btn' + (isActive ? ' active' : '') })
+                    .text(lbl)
+                    .on('click', function() {
+                        deviceListMinSignal = th.val;
+                        if (th.val === null) {
+                            kismet.putStorage('kismet.ui.devicelist.min_signal', '');
+                        } else {
+                            kismet.putStorage('kismet.ui.devicelist.min_signal', String(th.val));
+                        }
+                        host.find('.signal-filter-btn').removeClass('active');
+                        $(this).addClass('active');
+                        deviceTablePage = 0;
+                        ScheduleDeviceSummary();
+                    });
+                host.append(btn);
+            });
+            menu.append(host);
+        })(devviewmenu);
+
         devviewmenu.append(
             $('<form>', { action: '#' }).append($('<span>', { id: 'device_view_holder' })),
             $('<input>', {

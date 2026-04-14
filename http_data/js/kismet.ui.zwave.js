@@ -4,6 +4,8 @@
 /* Highlight zwave devices */
 kismet_ui.AddDeviceRowHighlight({
     name: "Z-Wave Devices",
+    labelKey: "rowhighlight.zwave_label",
+    descriptionKey: "rowhighlight.zwave_desc",
     description: "Z-Wave Node",
     priority: 100,
     defaultcolor: '#ffe6b3',

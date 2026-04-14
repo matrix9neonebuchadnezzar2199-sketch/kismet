@@ -1,5 +1,13 @@
 /* Kismet Enhanced UI — signal filter, monitor, whitelist, unassociated, export, modals */
 
+#center-device-extras .device-list-signal-filter-host {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-right: 8px;
+}
+
 .signal-filter-bar {
     display: flex;
     flex-wrap: wrap;

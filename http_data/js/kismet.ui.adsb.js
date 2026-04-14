@@ -64,6 +64,8 @@ $('<script>')
 /* Highlight ADSB devices */
 kismet_ui.AddDeviceRowHighlight({
     name: "ADSB Government",
+    labelKey: "rowhighlight.adsb_gov_label",
+    descriptionKey: "rowhighlight.adsb_gov_desc",
     description: "Government &amp; related ADSB-tagged vehicles",
     priority: 50,
     //defaultcolor: "#efe0c3",

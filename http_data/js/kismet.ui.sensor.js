@@ -10,6 +10,8 @@ kismet_ui.AddDeviceIcon((row) => {
 /* Highlight rtl devices */
 kismet_ui.AddDeviceRowHighlight({
     name: "Sensor Devices",
+    labelKey: "rowhighlight.sensor_label",
+    descriptionKey: "rowhighlight.sensor_desc",
     description: "RF-based Sensors",
     priority: 100,
     defaultcolor: "#ffb3cc",

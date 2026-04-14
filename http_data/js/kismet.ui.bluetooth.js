@@ -13,6 +13,8 @@ kismet_ui.AddDeviceIcon((row) => {
 
 kismet_ui.AddDeviceRowHighlight({
     name: "Bluetooth Device",
+    labelKey: "rowhighlight.bt_label",
+    descriptionKey: "rowhighlight.bt_desc",
     description: "Highlight all Bluetooth devices",
     priority: 100,
     defaultcolor: "#b3d1ff",
@@ -27,6 +29,8 @@ kismet_ui.AddDeviceRowHighlight({
 
 kismet_ui.AddDeviceRowHighlight({
     name: "Bluetooth BR/EDR Device",
+    labelKey: "rowhighlight.bt_bredr_label",
+    descriptionKey: "rowhighlight.bt_bredr_desc",
     description: "Highlight classic BR/EDR Bluetooth devices",
     priority: 101,
     defaultcolor: "#ddccff",
@@ -41,6 +45,8 @@ kismet_ui.AddDeviceRowHighlight({
 
 kismet_ui.AddDeviceRowHighlight({
     name: "Bluetooth BLE Device",
+    labelKey: "rowhighlight.bt_ble_label",
+    descriptionKey: "rowhighlight.bt_ble_desc",
     description: "Highlight BLE Bluetooth devices",
     priority: 101,
     defaultcolor: "#b3d9ff",

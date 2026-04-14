@@ -766,6 +766,21 @@ void device_tracker_view::device_endpoint_handler(std::shared_ptr<kis_net_beast_
         }
     }
 
+    // Optional minimum last signal (dBm): keep devices with last_signal >= threshold
+    auto min_signal_k = con->http_variables().find("min_signal");
+    if (min_signal_k != con->http_variables().end() && min_signal_k->second.length() > 0) {
+        int min_sig = string_to_n_dfl<int>(min_signal_k->second, -1000);
+        auto sig_worker =
+            device_tracker_view_function_worker([min_sig](std::shared_ptr<kis_tracked_device_base> dev) -> bool {
+                auto sd = dev->get_signal_data();
+                if (sd == nullptr)
+                    return false;
+                return sd->get_last_signal() >= min_sig;
+            });
+        auto sig_vec = do_readonly_device_work(sig_worker, next_work_vec);
+        next_work_vec->set(sig_vec->begin(), sig_vec->end());
+    }
+
     // Apply the filtered length
     filtered_sz_elem->set(next_work_vec->size());
 

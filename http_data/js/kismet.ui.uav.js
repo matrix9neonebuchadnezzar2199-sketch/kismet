@@ -4,6 +4,8 @@
 /* Highlight UAV devices */
 kismet_ui.AddDeviceRowHighlight({
     name: "UAV/Drones",
+    labelKey: "rowhighlight.uav_label",
+    descriptionKey: "rowhighlight.uav_desc",
     description: "UAV and Drone devices",
     priority: 100,
     defaultcolor: "#f49e42",

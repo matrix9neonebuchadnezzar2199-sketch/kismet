@@ -32,8 +32,9 @@ exports.registerEnhanced = function () {
 
     kismet_ui.AddDeviceRowHighlight({
         name: "Unassociated Probing Client",
-        label: t("highlight.unassociated_probing"),
-        description: t("unassociated.description"),
+        labelKey: "highlight.unassociated_probing",
+        descriptionKey: "unassociated.description",
+        description: "Devices sending probe requests without being connected to any AP",
         priority: 20,
         defaultcolor: "#FFA500",
         defaultenable: true,
@@ -57,8 +58,9 @@ exports.registerEnhanced = function () {
 
     kismet_ui.AddDeviceRowHighlight({
         name: "Unknown Device (Not Whitelisted)",
-        label: t("highlight.unknown_not_whitelisted"),
-        description: t("whitelist.unknown"),
+        labelKey: "highlight.unknown_not_whitelisted",
+        descriptionKey: "whitelist.unknown",
+        description: "Unregistered device",
         priority: 15,
         defaultcolor: "#FFCCCC",
         defaultenable: false,

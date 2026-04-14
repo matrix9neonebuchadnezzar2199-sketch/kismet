@@ -265,6 +265,8 @@ kismet_ui.AddChannelList("IEEE802.11", "Wi-Fi (802.11)", function(in_freq) {
 /* Highlight WPA handshakes */
 kismet_ui.AddDeviceRowHighlight({
     name: "WPA Handshake",
+    labelKey: "rowhighlight.wpa_handshake_label",
+    descriptionKey: "rowhighlight.wpa_handshake_desc",
     description: "Network contains a complete WPA handshake",
     priority: 10,
     defaultcolor: "#F00",
@@ -296,6 +298,8 @@ kismet_ui.AddDeviceRowHighlight({
 /* Highlight WPA RSN PMKID */
 kismet_ui.AddDeviceRowHighlight({
     name: "RSN PMKID",
+    labelKey: "rowhighlight.rsn_pmkid_label",
+    descriptionKey: "rowhighlight.rsn_pmkid_desc",
     description: "Network contains a RSN PMKID packet",
     priority: 10,
     defaultcolor: "#F55",
@@ -314,6 +318,8 @@ kismet_ui.AddDeviceRowHighlight({
 
 kismet_ui.AddDeviceRowHighlight({
     name: "Wi-Fi Device",
+    labelKey: "rowhighlight.wifi_label",
+    descriptionKey: "rowhighlight.wifi_desc",
     description: "Highlight all Wi-Fi devices",
     priority: 100,
     defaultcolor: "#99ff99",
@@ -328,6 +334,8 @@ kismet_ui.AddDeviceRowHighlight({
 
 kismet_ui.AddDeviceColumn('wifi_clients', {
     'title': 'Clients',
+    'titleKey': 'device_list.clients',
+    'descriptionKey': 'device_list.clients_desc',
     'description': 'Related Wi-Fi devices (associated and bridged), observed from packets',
     'field': 'dot11.device/dot11.device.num_associated_clients',
     'sortable': true,
@@ -354,6 +362,8 @@ kismet_ui.AddDeviceColumn('wifi_last_bssid', {
 
 kismet_ui.AddDeviceColumn('wifi_bss_uptime', {
     'title': 'Uptime',
+    'titleKey': 'device_list.uptime',
+    'descriptionKey': 'device_list.uptime_desc',
     'description': 'Estimated device uptime (from BSS timestamp)',
     'field': 'dot11.device/dot11.device.bss_timestamp',
     'sortable': true,
@@ -364,6 +374,8 @@ kismet_ui.AddDeviceColumn('wifi_bss_uptime', {
 
 kismet_ui.AddDeviceColumn('wifi_qbss_usage', {
     'title': 'QBSS Channel Usage',
+    'titleKey': 'device_list.qbss_usage',
+    'descriptionKey': 'device_list.qbss_usage_desc',
     'description': 'Reported channel utilization (802.11e QBSS)',
     'field': 'dot11.device/dot11.device.last_beaconed_ssid_record/dot11.advertisedssid.dot11e_channel_utilization_perc',
     'fields': ['dot11.device/dot11.device.last_beaconed_ssid_record/dot11.advertisedssid.dot11e_qbss'],
@@ -386,6 +398,8 @@ kismet_ui.AddDeviceColumn('wifi_qbss_usage', {
 
 kismet_ui.AddDeviceColumn('wifi_qbss_clients', {
     'title': 'QBSS #',
+    'titleKey': 'device_list.qbss_clients',
+    'descriptionKey': 'device_list.qbss_clients_desc',
     'description': 'Associated client count (reported by AP via 802.11e QBSS)',
     'field': 'dot11.device/dot11.device.last_beaconed_ssid_record/dot11.advertisedssid.dot11e_qbss_stations',
     'fields': ['dot11.device/dot11.device.last_beaconed_ssid_record/dot11.advertisedssid.dot11e_qbss'],

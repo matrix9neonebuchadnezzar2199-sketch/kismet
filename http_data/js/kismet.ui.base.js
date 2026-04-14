@@ -3889,6 +3889,8 @@ exports.FetchServerName = function(cb) {
 /* Highlight active devices */
 kismet_ui.AddDeviceRowHighlight({
     name: "Active",
+    labelKey: "rowhighlight.active_label",
+    descriptionKey: "rowhighlight.active_desc",
     description: "Device has been active in the past 10 seconds",
     priority: 500,
     defaultcolor: "#cee1ff",
@@ -3906,6 +3908,8 @@ kismet_ui.AddDeviceRowHighlight({
 /* Bodycam hardware of various types */
 kismet_ui.AddDeviceRowHighlight({
     name: "Bodycams",
+    labelKey: "rowhighlight.bodycams_label",
+    descriptionKey: "rowhighlight.bodycams_desc",
     description: "Body camera devices",
     priority: 500,
     defaultcolor: "#0089FF",

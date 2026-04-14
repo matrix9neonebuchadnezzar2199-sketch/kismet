@@ -12,6 +12,8 @@ kismet_ui.AddDeviceIcon((row) => {
 
 kismet_ui.AddDeviceRowHighlight({
     name: "802.15.4/Zigbee Device",
+    labelKey: "rowhighlight.zigbee_label",
+    descriptionKey: "rowhighlight.zigbee_desc",
     description: "Highlight all 802.15.4/Zigbee devices",
     priority: 100,
     defaultcolor: "#b3d1b3",

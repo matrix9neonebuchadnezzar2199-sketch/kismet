@@ -10,6 +10,8 @@ kismet_ui.AddDeviceIcon((row) => {
 /* Highlight rtl devices */
 kismet_ui.AddDeviceRowHighlight({
     name: "RF Meter Devices",
+    labelKey: "rowhighlight.meter_label",
+    descriptionKey: "rowhighlight.meter_desc",
     description: "RF Power, Water, Gas Meters",
     priority: 100,
     defaultcolor: "#b3ffe6",
