@@ -205,7 +205,8 @@ function syncWarnThrottled(warnKey, logFn) {
 function trySyncTags(entry) {
     if (typeof $ === "undefined") return;
     var mac = normalizeMac(entry.mac);
-    $.get(local_uri_prefix + "devices/by-mac/" + encodeURIComponent(mac) + "/devices.json")
+    /* Match kismet.ui.dot11.js: raw MAC in path (not encodeURIComponent); %3A can break server MAC parse → 500 */
+    $.get(local_uri_prefix + "devices/by-mac/" + mac + "/devices.json")
         .done(function (data) {
             if (!data || !data.length) return;
             var key = data[0]["kismet.device.base.key"];
