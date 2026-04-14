@@ -430,6 +430,10 @@ class TestWhitelistLogic(unittest.TestCase):
         self.assertRegex(content,
             r'kismet\.device\.base\.macaddr|column.*map|CSV_COLUMN|mapping',
             "CSVカラムマッピングが見つかりません")
+        self.assertIn("WHITELIST_DEVICE_CSV_HEADERS", content,
+            "メイン一覧と揃えたホワイトリストCSVヘッダ定義があること")
+        self.assertIn("wlan.sa (IEEE 802.11 MAC)", content,
+            "DevicesタブCSVと同じMAC列名があること")
 
 
 class TestIntegration(unittest.TestCase):
