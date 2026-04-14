@@ -128,10 +128,12 @@ class TestTranslationFiles(unittest.TestCase):
             'whitelist.title', 'whitelist.add', 'whitelist.import_csv',
             'whitelist.export_csv', 'whitelist.edit', 'whitelist.delete',
             'whitelist.status', 'whitelist.approved', 'whitelist.unknown',
+            'whitelist.safe_tag', 'whitelist.safe_tag_title',
             'whitelist.categories.pc', 'whitelist.categories.mobile',
             'whitelist.categories.iot',
             'unassociated.title', 'unassociated.probed_ssids',
             'signal_filter.above_60', 'signal_filter.show_all',
+            'highlight.whitelisted_trusted', 'highlight.whitelisted_trusted_desc',
             'signal_monitor.title', 'signal_monitor.csv_save',
             'export.csv', 'export.pdf',
             'common.ok', 'common.cancel',
@@ -263,6 +265,13 @@ class TestJavaScriptFiles(unittest.TestCase):
         """メインUIにハイライトが追加されているか"""
         content = self._read("http_data/js/kismet_ui_enhanced.js")
         self.assertIn('AddDeviceRowHighlight', content)
+        self.assertIn('Whitelisted device', content)
+        self.assertIn('WrapDeviceColumnRender', content)
+
+    def test_kismet_ui_wrap_device_column(self):
+        """デバイス列のラップ用APIが kismet.ui.js にあるか"""
+        content = (BASE_DIR / "http_data/js/kismet.ui.js").read_text(encoding="utf-8")
+        self.assertIn("WrapDeviceColumnRender", content)
 
     def test_loader_loads_all_modules(self):
         """ローダーが全モジュールを参照しているか"""
@@ -340,7 +349,8 @@ class TestCSSFile(unittest.TestCase):
     def test_whitelist_styles(self):
         """ホワイトリストのCSSが定義されているか"""
         content = self._read()
-        for cls in ['.whitelist-toolbar', '.whitelist-approved', '.whitelist-unknown']:
+        for cls in ['.whitelist-toolbar', '.whitelist-approved', '.whitelist-unknown',
+                    '.device-name-wl-safe']:
             self.assertIn(cls, content,
                 f"CSSに '{cls}' が定義されていません")
 

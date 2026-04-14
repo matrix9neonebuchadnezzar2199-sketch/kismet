@@ -146,6 +146,8 @@
     "notes_placeholder": "メモ（任意）",
     "mac_invalid": "MACアドレスの形式が正しくありません（6組の16進数をコロンまたはハイフンで）。",
     "duplicate_mac": "このMACアドレスはすでにホワイトリストに登録されています。",
+    "safe_tag": "安全",
+    "safe_tag_title": "このMACはホワイトリストに登録済みです",
     "select_all": "全選択",
     "selected_count": "{{count}}件選択中",
     "categories": {
@@ -288,7 +290,9 @@
   },
   "highlight": {
     "unassociated_probing": "未接続プローブ中クライアント",
-    "unknown_not_whitelisted": "ホワイトリスト未登録の端末"
+    "unknown_not_whitelisted": "ホワイトリスト未登録の端末",
+    "whitelisted_trusted": "ホワイトリスト登録済み（信頼）",
+    "whitelisted_trusted_desc": "薄い緑の行: 端末のMACがローカルホワイトリストにあります"
   },
   "common": {
     "minimize": "最小化",

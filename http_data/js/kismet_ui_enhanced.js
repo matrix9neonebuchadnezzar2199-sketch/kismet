@@ -72,6 +72,53 @@ exports.registerEnhanced = function () {
         }
     });
 
+    kismet_ui.AddDeviceRowHighlight({
+        name: "Whitelisted device (trusted)",
+        labelKey: "highlight.whitelisted_trusted",
+        descriptionKey: "highlight.whitelisted_trusted_desc",
+        description: "MAC is on the local whitelist",
+        priority: 30,
+        defaultcolor: "#D4EDDA",
+        defaultenable: true,
+        fields: ["kismet.device.base.macaddr"],
+        selector: function (data) {
+            var mac = data["kismet.device.base.macaddr"];
+            if (!mac || typeof kismet_whitelist_api === "undefined") return false;
+            return kismet_whitelist_api.isWhitelisted(mac);
+        }
+    });
+
+    function escAttr(s) {
+        return String(s || "")
+            .replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+    }
+
+    function applyWhitelistNameBadge() {
+        if (window.__kismetWlCommonnameWrap) return;
+        if (typeof kismet_ui.WrapDeviceColumnRender !== "function") return;
+        var ok = kismet_ui.WrapDeviceColumnRender("commonname", function (data, row, cell, onrender, aux, prev) {
+            var inner = prev(data, row, cell, onrender, aux);
+            var od = row && row.original_data;
+            var mac = od && od["kismet.device.base.macaddr"];
+            if (typeof kismet_whitelist_api !== "undefined" && mac && kismet_whitelist_api.isWhitelisted(mac)) {
+                var lab = t("whitelist.safe_tag");
+                var title = t("whitelist.safe_tag_title");
+                return "<span class=\"device-name-wl-cell\"><span class=\"device-name-wl-safe\" title=\"" +
+                    escAttr(title) + "\">" + escAttr(lab) + "</span><span class=\"device-name-wl-text\">" +
+                    inner + "</span></span>";
+            }
+            return inner;
+        });
+        if (ok) window.__kismetWlCommonnameWrap = true;
+    }
+    applyWhitelistNameBadge();
+    if (!window.__kismetWlCommonnameWrap) {
+        setTimeout(applyWhitelistNameBadge, 0);
+    }
+
     if (typeof kismet_ui_settings !== "undefined") {
         kismet_ui_settings.AddSettingsPane({
             id: "language_settings",

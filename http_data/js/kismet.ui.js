@@ -339,6 +339,26 @@ exports.AddDeviceColumn = (id, options) => {
     device_columnlist2.set(id, coldef);
 }
 
+/**
+ * Wrap an existing device column render function (by kismetId, e.g. "commonname").
+ * wrapperFn(data, row, cell, onrender, aux, prevRender) must return HTML string; call
+ * prevRender(...) for the original output.
+ */
+exports.WrapDeviceColumnRender = function(columnId, wrapperFn) {
+    if (typeof wrapperFn !== "function") {
+        return false;
+    }
+    var c = device_columnlist2.get(columnId);
+    if (!c || typeof c.render !== "function") {
+        return false;
+    }
+    var prev = c.render;
+    c.render = function(data, row, cell, onrender, aux) {
+        return wrapperFn(data, row, cell, onrender, aux, prev);
+    };
+    return true;
+};
+
 /* Add a hidden device column that is used for other utility, but not specifically displayed;
  * for instance the device key column must always be present.
  *

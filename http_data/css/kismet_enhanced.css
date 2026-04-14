@@ -173,6 +173,30 @@
     border-radius: 4px;
 }
 
+.device-name-wl-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    max-width: 100%;
+}
+
+.device-name-wl-safe {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #1b5e20;
+    color: #fff;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.device-name-wl-text {
+    min-width: 0;
+}
+
 .whitelist-status-icon {
     font-size: 16px;
 }

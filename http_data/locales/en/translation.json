@@ -146,6 +146,8 @@
     "notes_placeholder": "Optional notes",
     "mac_invalid": "Enter a valid MAC address (six pairs of hex digits, with colons or hyphens).",
     "duplicate_mac": "This MAC address is already on the whitelist.",
+    "safe_tag": "Trusted",
+    "safe_tag_title": "This MAC is on your whitelist",
     "select_all": "Select All",
     "selected_count": "{{count}} selected",
     "categories": {
@@ -288,7 +290,9 @@
   },
   "highlight": {
     "unassociated_probing": "Unassociated probing client",
-    "unknown_not_whitelisted": "Device not on whitelist"
+    "unknown_not_whitelisted": "Device not on whitelist",
+    "whitelisted_trusted": "Whitelisted (trusted)",
+    "whitelisted_trusted_desc": "Light green row: device MAC is on your local whitelist"
   },
   "common": {
     "minimize": "Minimize",
