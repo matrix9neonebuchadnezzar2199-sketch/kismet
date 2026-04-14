@@ -265,6 +265,30 @@ function showModal(title, body, onOk) {
     $("body").append(overlay);
 }
 
+function showConfirmModal(title, message, onYes, onCancel) {
+    var overlay = $("<div>", { class: "kismet-modal-overlay" });
+    var modal = $("<div>", { class: "kismet-modal" });
+    modal.append($("<div>", { class: "kismet-modal-header" }).text(title));
+    modal.append($("<div>", { class: "whitelist-dialog" }).append(
+        $("<p>", { css: { whiteSpace: "pre-wrap" } }).text(message)));
+    var foot = $("<div>", { class: "kismet-modal-footer" });
+    foot.append($("<button>", { type: "button", class: "kismet-modal-btn kismet-modal-btn--secondary" })
+        .text(t("common.cancel")).on("click", function () {
+        overlay.remove();
+        if (onCancel) {
+            onCancel();
+        }
+    }));
+    foot.append($("<button>", { type: "button", class: "kismet-modal-btn kismet-modal-btn--primary" })
+        .text(t("common.yes")).on("click", function () {
+        overlay.remove();
+        onYes();
+    }));
+    modal.append(foot);
+    overlay.append(modal);
+    $("body").append(overlay);
+}
+
 function validateMac(m) {
     var x = String(m || "").trim().toUpperCase().replace(/-/g, ":");
     return /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(x);
@@ -361,30 +385,30 @@ function OpenWhitelistPanel() {
         class: "btn js-wl-delete-selected"
     }).text(t("whitelist.delete_selected")).prop("disabled", true).on("click", function () {
         wlUiDbg("wl_bulk_delete_click", {});
-        if (!confirm(t("whitelist.confirm_delete"))) {
-            wlUiDbg("wl_bulk_delete_confirm_cancel", {});
-            return;
-        }
-        if (!tabulator) {
-            wlUiDbg("wl_bulk_delete_no_tabulator", {});
-            alert(t("common.error"));
-            return;
-        }
-        var macs = collectWlBulkDeleteMacs();
-        wlUiDbg("wl_bulk_delete_macs", { count: macs.length });
-        if (!macs.length) {
-            alert(t("common.select_rows_first"));
-            return;
-        }
-        try {
-            kismet_whitelist_api.removeBulkFromWhitelist(macs);
-            if (whitelistPanelWrap && whitelistPanelWrap.length) {
-                whitelistPanelWrap.find(".js-wl-sel-all").prop("checked", false).prop("indeterminate", false);
+        showConfirmModal(t("common.confirm"), t("whitelist.confirm_delete"), function onWlBulkYes() {
+            if (!tabulator) {
+                wlUiDbg("wl_bulk_delete_no_tabulator", {});
+                alert(t("common.error"));
+                return;
             }
-            refreshTable();
-        } catch (eDel) {
-            alert(String((eDel && eDel.message) ? eDel.message : eDel) || t("common.error"));
-        }
+            var macs = collectWlBulkDeleteMacs();
+            wlUiDbg("wl_bulk_delete_macs", { count: macs.length });
+            if (!macs.length) {
+                alert(t("common.select_rows_first"));
+                return;
+            }
+            try {
+                kismet_whitelist_api.removeBulkFromWhitelist(macs);
+                if (whitelistPanelWrap && whitelistPanelWrap.length) {
+                    whitelistPanelWrap.find(".js-wl-sel-all").prop("checked", false).prop("indeterminate", false);
+                }
+                refreshTable();
+            } catch (eDel) {
+                alert(String((eDel && eDel.message) ? eDel.message : eDel) || t("common.error"));
+            }
+        }, function onWlBulkCancel() {
+            wlUiDbg("wl_bulk_delete_modal_cancel", {});
+        });
     }));
     wrap.append(bulk);
 
@@ -505,13 +529,16 @@ function OpenWhitelistPanel() {
                                 alert(t("common.error"));
                                 return;
                             }
-                            if (!confirm(t("whitelist.confirm_delete"))) return;
-                            try {
-                                kismet_whitelist_api.removeFromWhitelist(mac);
-                                refreshTable();
-                            } catch (eRm) {
-                                alert(String((eRm && eRm.message) ? eRm.message : eRm) || t("common.error"));
-                            }
+                            showConfirmModal(t("common.confirm"), t("whitelist.confirm_delete"), function () {
+                                try {
+                                    kismet_whitelist_api.removeFromWhitelist(mac);
+                                    refreshTable();
+                                } catch (eRm) {
+                                    alert(String((eRm && eRm.message) ? eRm.message : eRm) || t("common.error"));
+                                }
+                            }, function () {
+                                wlUiDbg("wl_row_delete_modal_cancel", {});
+                            });
                         }
                     }
                 ]

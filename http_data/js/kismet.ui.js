@@ -18,6 +18,31 @@ function uiI18n(key, fallback) {
     return fallback;
 }
 
+/** Yes/No in-page (avoids window.confirm returning false when dialogs are blocked or mis-focused). */
+function uiConfirmModal(title, message, onYes, onCancel) {
+    var overlay = $("<div>", { class: "kismet-modal-overlay" });
+    var modal = $("<div>", { class: "kismet-modal" });
+    modal.append($("<div>", { class: "kismet-modal-header" }).text(title));
+    modal.append($("<div>", { class: "whitelist-dialog" }).append(
+        $("<p>", { css: { whiteSpace: "pre-wrap" } }).text(message)));
+    var foot = $("<div>", { class: "kismet-modal-footer" });
+    foot.append($("<button>", { type: "button", class: "kismet-modal-btn kismet-modal-btn--secondary" })
+        .text(uiI18n("common.cancel", "Cancel")).on("click", function () {
+        overlay.remove();
+        if (onCancel) {
+            onCancel();
+        }
+    }));
+    foot.append($("<button>", { type: "button", class: "kismet-modal-btn kismet-modal-btn--primary" })
+        .text(uiI18n("common.yes", "Yes")).on("click", function () {
+        overlay.remove();
+        onYes();
+    }));
+    modal.append(foot);
+    overlay.append(modal);
+    $("body").append(overlay);
+}
+
 var exports = {};
 
 exports.window_visible = true;
@@ -2134,47 +2159,48 @@ exports.InitializeDeviceTable = function(element) {
                     var cmsg = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ?
                         kismet_i18n.t('whitelist.confirm_bulk_register', { count: entries.length }) :
                         ('Register ' + entries.length + ' device(s) to whitelist?');
-                    if (!window.confirm(cmsg)) {
-                        wlUiDbg("device_bulk_confirm_cancelled", {});
-                        return;
-                    }
-                    var res;
-                    try {
-                        res = kismet_whitelist_api.addBulkToWhitelist(entries);
-                        wlUiDbg("device_bulk_done", { added: res.added, skipped: res.skipped ? res.skipped.length : 0 });
-                    } catch (eBulk) {
+                    var title = uiI18n("common.confirm", "Confirm");
+                    uiConfirmModal(title, cmsg, function onBulkYes() {
+                        var res;
                         try {
-                            alert(String((eBulk && eBulk.message) ? eBulk.message : eBulk) ||
-                                uiI18n("common.error", "Error"));
-                        } catch (eA) {
+                            res = kismet_whitelist_api.addBulkToWhitelist(entries);
+                            wlUiDbg("device_bulk_done", { added: res.added, skipped: res.skipped ? res.skipped.length : 0 });
+                        } catch (eBulk) {
+                            try {
+                                alert(String((eBulk && eBulk.message) ? eBulk.message : eBulk) ||
+                                    uiI18n("common.error", "Error"));
+                            } catch (eA) {
+                                ;
+                            }
+                            return;
+                        }
+                        deviceListWhitelistPick.clear();
+                        deviceTabulator.deselectRow();
+                        var cb = document.getElementById('device-list-wl-sel-all');
+                        if (cb) {
+                            cb.checked = false;
+                            cb.indeterminate = false;
+                        }
+                        updateDeviceListWlToolbar();
+                        var sum = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ?
+                            kismet_i18n.t('device_list.wl_bulk_done', {
+                                added: res.added,
+                                skipped: res.skipped.length
+                            }) :
+                            ('Added: ' + res.added + ', skipped: ' + res.skipped.length);
+                        try {
+                            alert(sum);
+                        } catch (e1) {
                             ;
                         }
-                        return;
-                    }
-                    deviceListWhitelistPick.clear();
-                    deviceTabulator.deselectRow();
-                    var cb = document.getElementById('device-list-wl-sel-all');
-                    if (cb) {
-                        cb.checked = false;
-                        cb.indeterminate = false;
-                    }
-                    updateDeviceListWlToolbar();
-                    var sum = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ?
-                        kismet_i18n.t('device_list.wl_bulk_done', {
-                            added: res.added,
-                            skipped: res.skipped.length
-                        }) :
-                        ('Added: ' + res.added + ', skipped: ' + res.skipped.length);
-                    try {
-                        alert(sum);
-                    } catch (e1) {
-                        ;
-                    }
-                    try {
-                        deviceTabulator.redraw(true);
-                    } catch (e2) {
-                        ;
-                    }
+                        try {
+                            deviceTabulator.redraw(true);
+                        } catch (e2) {
+                            ;
+                        }
+                    }, function onBulkCancel() {
+                        wlUiDbg("device_bulk_modal_cancel", {});
+                    });
                 });
             }
         }

@@ -256,6 +256,8 @@ class TestJavaScriptFiles(unittest.TestCase):
         self.assertIn('whitelist', content.lower())
         self.assertIn("root.kismet_ui_whitelist_module", content,
             "AMD 環境でもグローバルに登録し registerSidebar が動くこと")
+        self.assertIn("showConfirmModal", content,
+            "ホワイトリストUIに showConfirmModal がありません")
         self.assertIn("rowSelection", content,
             "ホワイトリスト表に行チェックボックス列があること")
 
@@ -319,6 +321,8 @@ class TestJavaScriptFiles(unittest.TestCase):
         main_ui = (BASE_DIR / "http_data/js/kismet.ui.js").read_text(encoding="utf-8")
         self.assertIn("addBulkToWhitelist", main_ui,
             "メインデバイス一覧からホワイトリスト一括登録がありません")
+        self.assertIn("uiConfirmModal", main_ui,
+            "一括登録の確認に uiConfirmModal（ネイティブconfirm回避）がありません")
         self.assertIn("device-list-wl-bulk-btn", main_ui,
             "メインデバイス一覧にホワイトリスト一括ボタンがありません")
         self.assertIn("gatherDeviceListWhitelistEntriesForBulk", main_ui,
