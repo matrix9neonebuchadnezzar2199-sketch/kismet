@@ -1362,9 +1362,10 @@ function deviceRowToWhitelistEntry(rowData) {
     if (!mac) {
         return null;
     }
+    var displayName = (od["kismet.device.base.name"] || od["kismet.device.base.manuf"] || mac || "").toString();
     return {
         mac: mac,
-        name: (od["kismet.device.base.name"] || "").toString(),
+        name: displayName,
         category: "other",
         notes: "device-list"
     };
@@ -2046,6 +2047,8 @@ exports.InitializeDeviceTable = function(element) {
         // layout: 'fitColumns',
 
         movableColumns: true,
+        // Tabulator 5.6 (bundled): use selectableRows. If Kismet upgrades Tabulator, check
+        // release notes — option names and rowSelection integration changed across early 5.x.
         selectableRows: true,
         columns: GenerateDeviceColumns2(),
 

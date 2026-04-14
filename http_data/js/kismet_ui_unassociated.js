@@ -537,7 +537,7 @@ function OpenUnassociatedPanel() {
                     var od = r.original_data || {};
                     return {
                         mac: r.mac,
-                        name: (od["kismet.device.base.name"] || r.manuf || "").toString(),
+                        name: (od["kismet.device.base.name"] || r.manuf || r.mac || "").toString(),
                         category: "other",
                         notes: "unassociated-panel"
                     };

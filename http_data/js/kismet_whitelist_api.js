@@ -67,6 +67,22 @@ function rebuildCache(arr) {
     }
 }
 
+/** Throttle repeated console.warn during Kismet restarts / network blips (same key within window). */
+var syncWarnLast = {};
+var SYNC_WARN_MIN_MS = 25000;
+
+function syncWarnThrottled(warnKey, logFn) {
+    var now = Date.now();
+    var last = syncWarnLast[warnKey] || 0;
+    if (now - last < SYNC_WARN_MIN_MS) {
+        return;
+    }
+    syncWarnLast[warnKey] = now;
+    if (typeof console !== "undefined" && console.warn) {
+        logFn();
+    }
+}
+
 function trySyncTags(entry) {
     if (typeof $ === "undefined") return;
     var mac = normalizeMac(entry.mac);
@@ -79,9 +95,9 @@ function trySyncTags(entry) {
             function postTag(tagname, tagvalue) {
                 $.post(base, JSON.stringify({ tagname: tagname, tagvalue: tagvalue }))
                     .fail(function (xhr) {
-                        if (typeof console !== "undefined" && console.warn) {
-                            console.warn("[whitelist] set_tag failed", tagname, xhr && xhr.status);
-                        }
+                        syncWarnThrottled("set_tag:" + mac + ":" + tagname, function () {
+                            console.warn("[whitelist] set_tag failed", tagname, mac, xhr && xhr.status);
+                        });
                     });
             }
             postTag("whitelist", "approved");
@@ -93,9 +109,9 @@ function trySyncTags(entry) {
             }
         })
         .fail(function (xhr) {
-            if (typeof console !== "undefined" && console.warn) {
+            syncWarnThrottled("by-mac:" + mac, function () {
                 console.warn("[whitelist] by-mac lookup failed", mac, xhr && xhr.status);
-            }
+            });
         });
 }
 
@@ -169,6 +185,11 @@ exports.updateWhitelistEntry = function (mac, updates) {
     return null;
 };
 
+/**
+ * Remove one MAC from the whitelist (localStorage).
+ * Note: localStorage is shared across tabs. Another tab can write between load and save;
+ * this path does not merge concurrent edits (single-tab / low contention is assumed).
+ */
 exports.removeFromWhitelist = function (mac) {
     var m = normalizeMac(mac);
     var before = loadStorage();

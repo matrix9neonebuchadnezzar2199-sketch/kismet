@@ -239,6 +239,8 @@ class TestJavaScriptFiles(unittest.TestCase):
 
     def test_unassociated_sidebar(self):
         """未接続クライアントモジュールが UI 登録用のエクスポートを持つか"""
+        # TODO: Unify on one registration style (AddSidebarItem vs exports.registerSidebar)
+        # when the product UX for unassociated entry is finalized; then tighten this assert.
         content = self._read("http_data/js/kismet_ui_unassociated.js")
         self.assertTrue(
             'AddSidebarItem' in content or 'exports.registerSidebar' in content,
