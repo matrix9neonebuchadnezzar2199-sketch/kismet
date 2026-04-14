@@ -325,6 +325,8 @@ class TestJavaScriptFiles(unittest.TestCase):
             "一括登録が選択行からエントリを組み立てるフォールバックがありません")
         self.assertIn("device-list-wl-sel-all", main_ui,
             "一括登録がページ全選択チェックボックスを参照していません")
+        self.assertIn("deviceTabulatorSelectedCount", main_ui,
+            "デバイス一覧の選択件数ヘルパーがありません")
 
 
 class TestCSSFile(unittest.TestCase):

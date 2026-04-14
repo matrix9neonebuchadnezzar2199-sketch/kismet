@@ -62,20 +62,33 @@ function getWlSelectedRowDatas() {
     return [];
 }
 
-/** Selection count aligned with Tabulator row state (not only getSelected* APIs). */
-function countWlSelectedRows() {
-    if (!tabulator) return 0;
-    var n = 0;
-    try {
-        tabulator.getRows().forEach(function (r) {
-            if (r.isSelected()) {
-                n++;
-            }
-        });
-    } catch (eCnt) {
-        /* ignore */
+/** Selected row count and total rows (per-row try; survives odd Tabulator states). */
+function wlSelectedStats() {
+    if (!tabulator) {
+        return { n: 0, total: 0 };
     }
-    return n;
+    try {
+        var rows = tabulator.getRows();
+        var total = rows.length;
+        var n = 0;
+        var i;
+        for (i = 0; i < total; i++) {
+            try {
+                if (rows[i].isSelected()) {
+                    n++;
+                }
+            } catch (eR) {
+                ;
+            }
+        }
+        return { n: n, total: total };
+    } catch (e0) {
+        return { n: 0, total: 0 };
+    }
+}
+
+function countWlSelectedRows() {
+    return wlSelectedStats().n;
 }
 
 function pushMacDedup(seen, macs, m) {
@@ -121,15 +134,37 @@ function collectWlBulkDeleteMacs() {
     var macs = [];
     if (!tabulator) return macs;
 
-    var pageAll = whitelistPanelWrap && whitelistPanelWrap.length &&
-        whitelistPanelWrap.find(".js-wl-sel-all").prop("checked");
+    var st = wlSelectedStats();
+    var implicitAll = st.total > 0 && st.n === st.total;
+    var pageAll = (whitelistPanelWrap && whitelistPanelWrap.length &&
+        whitelistPanelWrap.find(".js-wl-sel-all").prop("checked")) || implicitAll;
+    var i;
+    var rows = [];
+    try {
+        rows = tabulator.getRows() || [];
+    } catch (eGr) {
+        rows = [];
+    }
     if (pageAll) {
-        try {
-            tabulator.getRows().forEach(function (r) {
-                pushMacDedup(seen, macs, rowMacFromTabulatorRow(r));
-            });
-        } catch (eAll) {
-            /* ignore */
+        if (rows.length) {
+            for (i = 0; i < rows.length; i++) {
+                try {
+                    pushMacDedup(seen, macs, rowMacFromTabulatorRow(rows[i]));
+                } catch (e1) {
+                    ;
+                }
+            }
+        } else if (typeof tabulator.getData === "function") {
+            try {
+                var flat = tabulator.getData();
+                if (flat && flat.length) {
+                    for (i = 0; i < flat.length; i++) {
+                        pushMacDedup(seen, macs, flat[i] && flat[i].mac);
+                    }
+                }
+            } catch (eFlat) {
+                ;
+            }
         }
         if (macs.length) {
             return macs;
@@ -137,11 +172,15 @@ function collectWlBulkDeleteMacs() {
     }
 
     try {
-        tabulator.getRows().forEach(function (r) {
-            if (r.isSelected()) {
-                pushMacDedup(seen, macs, rowMacFromTabulatorRow(r));
+        for (i = 0; i < rows.length; i++) {
+            try {
+                if (rows[i].isSelected()) {
+                    pushMacDedup(seen, macs, rowMacFromTabulatorRow(rows[i]));
+                }
+            } catch (eR) {
+                ;
             }
-        });
+        }
     } catch (eSel) {
         /* ignore */
     }
@@ -350,7 +389,13 @@ function OpenWhitelistPanel() {
         var on = $(this).prop("checked");
         if (on) {
             tabulator.deselectRow();
-            tabulator.selectRow();
+            tabulator.getRows().forEach(function (r) {
+                try {
+                    r.select();
+                } catch (eS) {
+                    ;
+                }
+            });
         } else {
             tabulator.deselectRow();
         }

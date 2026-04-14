@@ -1350,8 +1350,14 @@ function deviceRowMatchesKind(od, kind) {
 }
 
 function deviceRowToWhitelistEntry(rowData) {
+    if (!rowData) {
+        return null;
+    }
     var od = rowData.original_data || {};
     var mac = (od["kismet.device.base.macaddr"] || "").toString().trim();
+    if (!mac && rowData["kismet.device.base.macaddr"] != null) {
+        mac = String(rowData["kismet.device.base.macaddr"]).trim();
+    }
     if (!mac) {
         return null;
     }
@@ -1396,10 +1402,35 @@ function syncDeviceListWhitelistPickRow(row, selected) {
     }
 }
 
+function deviceTabulatorSelectedCount() {
+    if (!deviceTabulator) {
+        return { n: 0, total: 0 };
+    }
+    try {
+        var rows = deviceTabulator.getRows();
+        var total = rows.length;
+        var n = 0;
+        var i;
+        for (i = 0; i < total; i++) {
+            try {
+                if (rows[i].isSelected()) {
+                    n++;
+                }
+            } catch (eR) {
+                ;
+            }
+        }
+        return { n: n, total: total };
+    } catch (e0) {
+        return { n: 0, total: 0 };
+    }
+}
+
 /**
  * Entries for bulk whitelist register.
- * Prefer "this page select-all" checkbox + current rows (avoids Tabulator selection desync on 2nd run);
- * otherwise selected rows only. Dedupe by normalized MAC.
+ * Include all visible rows when toolbar「全選択」is checked OR every row reports selected
+ * (Tabulator header select-all without syncing the toolbar checkbox). Dedupe by MAC.
+ * Falls back to getData() if getRows() is empty but the page select-all box is checked.
  */
 function gatherDeviceListWhitelistEntriesForBulk() {
     var entries = [];
@@ -1418,23 +1449,52 @@ function gatherDeviceListWhitelistEntriesForBulk() {
         return entries;
     }
     var cb = document.getElementById("device-list-wl-sel-all");
-    var pageAll = cb && cb.checked;
+    var sc = deviceTabulatorSelectedCount();
+    var implicitAll = sc.total > 0 && sc.n === sc.total;
+    var pageAll = (cb && cb.checked) || implicitAll;
+    var i;
+    var rows = [];
     try {
-        deviceTabulator.getRows().forEach(function (r) {
-            if (!pageAll && !r.isSelected()) {
-                return;
+        rows = deviceTabulator.getRows() || [];
+    } catch (eRows) {
+        rows = [];
+    }
+    if (rows.length) {
+        for (i = 0; i < rows.length; i++) {
+            try {
+                if (!pageAll && !rows[i].isSelected()) {
+                    continue;
+                }
+                var e = deviceRowToWhitelistEntry(rows[i].getData());
+                pushEntry(e);
+                if (e && e.mac) {
+                    var key = deviceListWhitelistPickKey(rows[i].getData());
+                    if (key) {
+                        deviceListWhitelistPick.set(key, e);
+                    }
+                }
+            } catch (eRow) {
+                ;
             }
-            var e = deviceRowToWhitelistEntry(r.getData());
-            pushEntry(e);
-            if (e && e.mac) {
-                var key = deviceListWhitelistPickKey(r.getData());
-                if (key) {
-                    deviceListWhitelistPick.set(key, e);
+        }
+    } else if (pageAll && typeof deviceTabulator.getData === "function") {
+        try {
+            var flat = deviceTabulator.getData();
+            if (flat && flat.length) {
+                for (i = 0; i < flat.length; i++) {
+                    var e2 = deviceRowToWhitelistEntry(flat[i]);
+                    pushEntry(e2);
+                    if (e2 && e2.mac) {
+                        var k2 = deviceListWhitelistPickKey(flat[i]);
+                        if (k2) {
+                            deviceListWhitelistPick.set(k2, e2);
+                        }
+                    }
                 }
             }
-        });
-    } catch (exGather) {
-        ;
+        } catch (eFlat) {
+            ;
+        }
     }
     if (!entries.length) {
         deviceListWhitelistPick.forEach(function (v) {
@@ -1988,8 +2048,12 @@ exports.InitializeDeviceTable = function(element) {
                     if (this.checked) {
                         deviceTabulator.deselectRow();
                         deviceListWhitelistPick.clear();
-                        deviceTabulator.selectRow();
                         deviceTabulator.getRows().forEach(function (r) {
+                            try {
+                                r.select();
+                            } catch (eSel) {
+                                ;
+                            }
                             syncDeviceListWhitelistPickRow(r, true);
                         });
                         updateDeviceListWlToolbar();
@@ -2022,7 +2086,18 @@ exports.InitializeDeviceTable = function(element) {
                     if (!window.confirm(cmsg)) {
                         return;
                     }
-                    var res = kismet_whitelist_api.addBulkToWhitelist(entries);
+                    var res;
+                    try {
+                        res = kismet_whitelist_api.addBulkToWhitelist(entries);
+                    } catch (eBulk) {
+                        try {
+                            alert(String((eBulk && eBulk.message) ? eBulk.message : eBulk) ||
+                                uiI18n("common.error", "Error"));
+                        } catch (eA) {
+                            ;
+                        }
+                        return;
+                    }
                     deviceListWhitelistPick.clear();
                     deviceTabulator.deselectRow();
                     var cb = document.getElementById('device-list-wl-sel-all');
