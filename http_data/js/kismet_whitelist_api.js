@@ -220,12 +220,17 @@ function trySyncTags(entry) {
                 }
                 var jscmd = { tagname: tagname, tagvalue: v };
                 var postdata = "json=" + encodeURIComponent(JSON.stringify(jscmd));
-                $.post(base, postdata, "json")
-                    .fail(function (xhr) {
-                        syncWarnThrottled("set_tag:" + mac + ":" + tagname, function () {
-                            console.warn("[whitelist] set_tag failed", tagname, mac, xhr && xhr.status);
-                        });
+                /* Server responds with plain text "Device tag set\\n", not JSON — "json" dataType rejects 200 OK */
+                $.ajax({
+                    url: base,
+                    type: "POST",
+                    data: postdata,
+                    dataType: "text"
+                }).fail(function (xhr) {
+                    syncWarnThrottled("set_tag:" + mac + ":" + tagname, function () {
+                        console.warn("[whitelist] set_tag failed", tagname, mac, xhr && xhr.status);
                     });
+                });
             }
             postTag("whitelist", "approved");
             if (entry.category) {

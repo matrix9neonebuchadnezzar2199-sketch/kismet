@@ -448,6 +448,8 @@ class TestWhitelistLogic(unittest.TestCase):
             "set_tag は application/x-www-form-urlencoded の json= ペイロードである必要があります")
         self.assertNotRegex(content, r'\$\.post\s*\(\s*base\s*,\s*JSON\.stringify',
             "生JSONを $.post の data に渡すと Content-Type と不一致でサーバーが失敗します")
+        self.assertIn('dataType: "text"', content,
+            "set_tag の応答はプレーンテキストのため dataType text が必要（json だと 200 でも .fail になる）")
 
     def test_whitelist_csv_column_mapping(self):
         """CSVカラムマッピングが定義されているか"""
