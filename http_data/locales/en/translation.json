@@ -44,7 +44,8 @@
     "qbss_usage": "QBSS Channel Usage",
     "qbss_usage_desc": "Reported channel utilization (802.11e QBSS)",
     "qbss_clients": "QBSS #",
-    "qbss_clients_desc": "Associated client count (reported by AP via 802.11e QBSS)"
+    "qbss_clients_desc": "Associated client count (reported by AP via 802.11e QBSS)",
+    "signal_filter_footer": "Signal ≥ {{thr}} dBm: {{count}} on this page ({{total}} total in view)"
   },
   "rowhighlight": {
     "active_label": "Active",

@@ -1250,6 +1250,26 @@ var deviceTableRefreshing = false;
 /** Minimum last signal (dBm) for device list, or null for no filter. Same semantics as unassociated (e.g. -60 means last_signal &gt;= -60). */
 var deviceListMinSignal = null;
 
+/** Rows shown after optional client-side signal filter (current page). */
+var deviceTableRowsThisPage = 0;
+
+function deviceRowLastSignalDbm(row) {
+    if (row['signal'] !== undefined && row['signal'] !== null && row['signal'] !== 0 && row['signal'] !== '0') {
+        return Number(row['signal']);
+    }
+    var od = row['original_data'];
+    if (!od)
+        return null;
+    if (od['device_last_signal'] !== undefined && od['device_last_signal'] !== null && od['device_last_signal'] !== 0)
+        return Number(od['device_last_signal']);
+    var sig = od['kismet.device.base.signal'];
+    if (sig && sig['kismet.common.signal.last_signal'] != null)
+        return parseFloat(sig['kismet.common.signal.last_signal']);
+    if (od['kismet.common.signal.last_signal'] != null)
+        return parseFloat(od['kismet.common.signal.last_signal']);
+    return null;
+}
+
 function ScheduleDeviceSummary() {
     if (deviceTid2 != -1)
         clearTimeout(deviceTid2);
@@ -1371,6 +1391,16 @@ function ScheduleDeviceSummary() {
 
                         procdata.push(md);
                     }
+
+                    if (deviceListMinSignal !== null && deviceListMinSignal !== '') {
+                        procdata = procdata.filter(function(row) {
+                            var s = deviceRowLastSignalDbm(row);
+                            if (s === null || isNaN(s))
+                                return false;
+                            return s >= deviceListMinSignal;
+                        });
+                    }
+                    deviceTableRowsThisPage = procdata.length;
 
                     // deviceTabulator.replaceData(data["data"]);
                     deviceTabulator.replaceData(procdata);
@@ -1650,6 +1680,15 @@ exports.InitializeDeviceTable = function(element) {
         paginationCounter: function(pageSize, currentRow, currentPage, totalRows, totalPages) {
             if (deviceTableTotal == 0) {
                 return "Loading..."
+            }
+
+            if (deviceListMinSignal !== null && deviceListMinSignal !== '') {
+                var sf = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ? kismet_i18n.t('device_list.signal_filter_footer', {
+                    count: deviceTableRowsThisPage,
+                    thr: deviceListMinSignal,
+                    total: deviceTableTotal
+                }) : ('Signal ≥ ' + deviceListMinSignal + ' dBm: ' + deviceTableRowsThisPage + ' on this page / ' + deviceTableTotal + ' in view');
+                return sf;
             }
 
             var frow = pageSize * deviceTablePage;

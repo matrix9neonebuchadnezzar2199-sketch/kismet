@@ -44,7 +44,8 @@
     "qbss_usage": "QBSS チャンネル使用率",
     "qbss_usage_desc": "AP が報告するチャンネル利用率（802.11e QBSS）",
     "qbss_clients": "QBSS 端末数",
-    "qbss_clients_desc": "AP が 802.11e QBSS で報告する関連クライアント数"
+    "qbss_clients_desc": "AP が 802.11e QBSS で報告する関連クライアント数",
+    "signal_filter_footer": "電波 ≥ {{thr}} dBm: このページ {{count}} 件（一覧全体 {{total}} 件）"
   },
   "rowhighlight": {
     "active_label": "アクティブ",
