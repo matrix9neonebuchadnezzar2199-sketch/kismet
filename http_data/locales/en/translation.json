@@ -134,6 +134,7 @@
     "confirm_delete": "Are you sure you want to delete?",
     "confirm_bulk_register": "Register {{count}} devices to whitelist?",
     "import_success": "Successfully imported {{count}} devices",
+    "import_csv_confirm": "Import these lines into the whitelist? Click Yes to proceed or Cancel to abort.",
     "import_error": "CSV import failed",
     "edit_title": "Edit Whitelist Entry",
     "add_title": "Add to Whitelist",

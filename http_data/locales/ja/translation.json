@@ -134,6 +134,7 @@
     "confirm_delete": "削除してよろしいですか？",
     "confirm_bulk_register": "{{count}}件のデバイスをホワイトリストに登録しますか？",
     "import_success": "{{count}}件のデバイスを取り込みました",
+    "import_csv_confirm": "上記をホワイトリストに取り込みますか？「はい」で実行、「キャンセル」で中止します。",
     "import_error": "CSV取込に失敗しました",
     "edit_title": "ホワイトリスト編集",
     "add_title": "ホワイトリストに追加",

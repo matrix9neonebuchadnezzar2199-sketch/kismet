@@ -270,7 +270,14 @@ function showConfirmModal(title, message, onYes, onCancel) {
     var modal = $("<div>", { class: "kismet-modal" });
     modal.append($("<div>", { class: "kismet-modal-header" }).text(title));
     modal.append($("<div>", { class: "whitelist-dialog" }).append(
-        $("<p>", { css: { whiteSpace: "pre-wrap" } }).text(message)));
+        $("<p>", {
+            css: {
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                color: "#1a1a1a",
+                margin: "0 0 8px 0"
+            }
+        }).text(message)));
     var foot = $("<div>", { class: "kismet-modal-footer" });
     foot.append($("<button>", { type: "button", class: "kismet-modal-btn kismet-modal-btn--secondary" })
         .text(t("common.cancel")).on("click", function () {
@@ -418,16 +425,22 @@ function OpenWhitelistPanel() {
         var reader = new FileReader();
         reader.onload = function () {
             var text = reader.result;
-            var preview = String(text).split("\n").slice(0, 6).join("\n");
-            var prevBox = $("<pre>").text(preview);
-            showModal(t("whitelist.import_csv"), prevBox, function (done) {
-                var res = kismet_whitelist_api.importFromCSV(String(text));
+            var full = String(text);
+            var preview = full;
+            if (preview.length > 2800) {
+                preview = preview.slice(0, 2800) + "\n…";
+            }
+            var msg = preview + "\n\n" + t("whitelist.import_csv_confirm");
+            showConfirmModal(t("whitelist.import_csv"), msg, function onImportYes() {
+                var res = kismet_whitelist_api.importFromCSV(full);
                 alert(t("whitelist.import_success", { count: res.success }));
                 if (res.errors.length) {
                     alert(res.errors.join("\n"));
                 }
                 refreshTable();
-                done();
+                fileInput.val("");
+            }, function onImportCancel() {
+                fileInput.val("");
             });
         };
         reader.readAsText(f);

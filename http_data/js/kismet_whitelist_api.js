@@ -350,7 +350,11 @@ exports.importFromCSV = function (csvString) {
         errors.push("PapaParse not available");
         return { success: success, errors: errors };
     }
-    var parsed = Papa.parse(csvString, { header: true });
+    var raw = csvString == null ? "" : String(csvString);
+    if (raw.length && raw.charCodeAt(0) === 0xfeff) {
+        raw = raw.slice(1);
+    }
+    var parsed = Papa.parse(raw, { header: true });
     var fields = parsed.meta && parsed.meta.fields ? parsed.meta.fields : [];
     var rows = parsed.data || [];
     var useMainStyle = isMainDeviceCsvFormat(fields);
