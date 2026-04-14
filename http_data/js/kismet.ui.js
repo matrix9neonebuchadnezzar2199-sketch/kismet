@@ -1396,33 +1396,50 @@ function syncDeviceListWhitelistPickRow(row, selected) {
     }
 }
 
-/** Entries for bulk whitelist register: Map contents, or Tabulator selection if Map is empty. */
+/**
+ * Entries for bulk whitelist register.
+ * Prefer "this page select-all" checkbox + current rows (avoids Tabulator selection desync on 2nd run);
+ * otherwise selected rows only. Dedupe by normalized MAC.
+ */
 function gatherDeviceListWhitelistEntriesForBulk() {
     var entries = [];
-    deviceListWhitelistPick.forEach(function (v) {
-        entries.push(v);
-    });
-    if (entries.length || !deviceTabulator) {
+    var seenMac = {};
+    function pushEntry(e) {
+        if (!e || !e.mac) return;
+        var m = String(e.mac).trim().toUpperCase().replace(/-/g, ":");
+        if (!m || seenMac[m]) return;
+        seenMac[m] = 1;
+        entries.push(e);
+    }
+    if (!deviceTabulator) {
+        deviceListWhitelistPick.forEach(function (v) {
+            pushEntry(v);
+        });
         return entries;
     }
+    var cb = document.getElementById("device-list-wl-sel-all");
+    var pageAll = cb && cb.checked;
     try {
         deviceTabulator.getRows().forEach(function (r) {
-            if (!r.isSelected()) {
+            if (!pageAll && !r.isSelected()) {
                 return;
             }
-            var d = r.getData();
-            var e = deviceRowToWhitelistEntry(d);
-            if (!e || !e.mac) {
-                return;
+            var e = deviceRowToWhitelistEntry(r.getData());
+            pushEntry(e);
+            if (e && e.mac) {
+                var key = deviceListWhitelistPickKey(r.getData());
+                if (key) {
+                    deviceListWhitelistPick.set(key, e);
+                }
             }
-            var key = deviceListWhitelistPickKey(d);
-            if (key) {
-                deviceListWhitelistPick.set(key, e);
-            }
-            entries.push(e);
         });
     } catch (exGather) {
         ;
+    }
+    if (!entries.length) {
+        deviceListWhitelistPick.forEach(function (v) {
+            pushEntry(v);
+        });
     }
     return entries;
 }
@@ -2081,6 +2098,16 @@ exports.InitializeDeviceTable = function(element) {
             });
 
         element.append(devicetableElement2);
+    }
+
+    if (deviceTabulator) {
+        try {
+            ScheduleDeviceSummary();
+        } catch (eSch) {
+            ;
+        }
+        updateDeviceListWlToolbar();
+        return;
     }
 
     deviceTabulator = new Tabulator('#devices-table2', {

@@ -113,13 +113,28 @@ function rowMacFromTabulatorRow(r) {
 }
 
 /**
- * MACs for bulk delete: union of (selected rows), (getSelected*), and toolbar「全選択」
- * when rows look selected but Tabulator selection APIs are empty.
+ * MACs for bulk delete. If toolbar「全選択」is checked, trust all table rows (avoids Tabulator
+ * selection desync after replaceData); else selected rows + getSelected* APIs.
  */
 function collectWlBulkDeleteMacs() {
     var seen = {};
     var macs = [];
     if (!tabulator) return macs;
+
+    var pageAll = whitelistPanelWrap && whitelistPanelWrap.length &&
+        whitelistPanelWrap.find(".js-wl-sel-all").prop("checked");
+    if (pageAll) {
+        try {
+            tabulator.getRows().forEach(function (r) {
+                pushMacDedup(seen, macs, rowMacFromTabulatorRow(r));
+            });
+        } catch (eAll) {
+            /* ignore */
+        }
+        if (macs.length) {
+            return macs;
+        }
+    }
 
     try {
         tabulator.getRows().forEach(function (r) {
@@ -135,17 +150,6 @@ function collectWlBulkDeleteMacs() {
         pushMacDedup(seen, macs, row && row.mac);
     });
 
-    if (!macs.length && whitelistPanelWrap && whitelistPanelWrap.length) {
-        try {
-            if (whitelistPanelWrap.find(".js-wl-sel-all").prop("checked")) {
-                tabulator.getRows().forEach(function (r) {
-                    pushMacDedup(seen, macs, rowMacFromTabulatorRow(r));
-                });
-            }
-        } catch (eAll) {
-            /* ignore */
-        }
-    }
     return macs;
 }
 

@@ -323,6 +323,8 @@ class TestJavaScriptFiles(unittest.TestCase):
             "メインデバイス一覧にホワイトリスト一括ボタンがありません")
         self.assertIn("gatherDeviceListWhitelistEntriesForBulk", main_ui,
             "一括登録が選択行からエントリを組み立てるフォールバックがありません")
+        self.assertIn("device-list-wl-sel-all", main_ui,
+            "一括登録がページ全選択チェックボックスを参照していません")
 
 
 class TestCSSFile(unittest.TestCase):
