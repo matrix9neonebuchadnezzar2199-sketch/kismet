@@ -109,4 +109,10 @@ sudo make install
 echo
 echo "[install-from-github] Done. Web UI files are under: $PREFIX/share/kismet/httpd/"
 echo "[install-from-github] Restart Kismet so the browser loads the new UI."
-echo "[install-from-github] If the build failed on missing headers, re-run with: $0 $TARGET --with-deps"
+# When run as: bash <(curl ...), $0 is /proc/self/fd/N — not a useful hint.
+_script="${BASH_SOURCE[0]:-$0}"
+if [[ "$_script" == /proc/self/fd/* ]]; then
+    echo "[install-from-github] If a future build fails on missing headers, use the same one-liner with --with-deps"
+else
+    echo "[install-from-github] If a future build fails on missing headers, re-run: $_script $TARGET --with-deps"
+fi
