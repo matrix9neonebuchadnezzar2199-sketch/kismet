@@ -21,10 +21,25 @@ function uiI18n(key, fallback) {
 /** Yes/No in-page (avoids window.confirm returning false when dialogs are blocked or mis-focused). */
 function uiConfirmModal(title, message, onYes, onCancel) {
     var overlay = $("<div>", { class: "kismet-modal-overlay" });
+    try {
+        if (overlay[0] && overlay[0].style && overlay[0].style.setProperty) {
+            overlay[0].style.setProperty("z-index", "999999", "important");
+        }
+    } catch (eZ) { /* ignore */ }
     var modal = $("<div>", { class: "kismet-modal" });
     modal.append($("<div>", { class: "kismet-modal-header" }).text(title));
-    modal.append($("<div>", { class: "whitelist-dialog" }).append(
-        $("<p>", { css: { whiteSpace: "pre-wrap" } }).text(message)));
+    var msgP = $("<p>", { class: "kismet-modal-message", css: { whiteSpace: "pre-wrap", wordBreak: "break-word" } });
+    msgP.text(message);
+    try {
+        if (msgP[0] && msgP[0].style && msgP[0].style.setProperty) {
+            msgP[0].style.setProperty("color", "#1a1a1a", "important");
+            msgP[0].style.setProperty("background-color", "#f5f5f5", "important");
+            msgP[0].style.setProperty("border", "1px solid #cccccc", "important");
+            msgP[0].style.setProperty("padding", "12px", "important");
+            msgP[0].style.setProperty("border-radius", "4px", "important");
+        }
+    } catch (eP) { /* ignore */ }
+    modal.append($("<div>", { class: "whitelist-dialog" }).append(msgP));
     var foot = $("<div>", { class: "kismet-modal-footer" });
     foot.append($("<button>", { type: "button", class: "kismet-modal-btn kismet-modal-btn--secondary" })
         .text(uiI18n("common.cancel", "Cancel")).on("click", function () {

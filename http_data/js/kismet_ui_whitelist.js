@@ -238,19 +238,42 @@ function wlFieldSuffix() {
     return String(Math.floor(Math.random() * 1e9));
 }
 
+/** Dark theme sets body text to light colors; modal is white — force contrast (beats most !important rules). */
+function wlModalStyleImportant(jqOrEl, prop, value) {
+    try {
+        var el = jqOrEl && jqOrEl.jquery ? jqOrEl[0] : jqOrEl;
+        if (el && el.style && typeof el.style.setProperty === "function") {
+            el.style.setProperty(prop, value, "important");
+        }
+    } catch (e) {
+        /* ignore */
+    }
+}
+
 function appendFieldRow(container, labelKey, control) {
     var row = $("<div>", { class: "whitelist-field-row" });
     var cid = control.attr("id");
-    row.append($("<label>", cid ? { for: cid } : {}).text(t(labelKey)));
+    var lab = $("<label>", cid ? { for: cid } : {}).text(t(labelKey));
+    wlModalStyleImportant(lab, "color", "#212121");
+    wlModalStyleImportant(lab, "font-size", "13px");
+    wlModalStyleImportant(lab, "font-weight", "600");
+    row.append(lab);
     row.append(control);
     container.append(row);
 }
 
 function showModal(title, body, onOk) {
     var overlay = $("<div>", { class: "kismet-modal-overlay" });
+    wlModalStyleImportant(overlay, "z-index", "999999");
     var modal = $("<div>", { class: "kismet-modal" });
-    modal.append($("<div>", { class: "kismet-modal-header" }).text(title));
-    modal.append($("<div>", { class: "whitelist-dialog" }).append(body));
+    wlModalStyleImportant(modal, "color", "#1a1a1a");
+    var hdr = $("<div>", { class: "kismet-modal-header" }).text(title);
+    wlModalStyleImportant(hdr, "color", "#111111");
+    modal.append(hdr);
+    var dlg = $("<div>", { class: "whitelist-dialog" });
+    wlModalStyleImportant(dlg, "color", "#212121");
+    dlg.append(body);
+    modal.append(dlg);
     var foot = $("<div>", { class: "kismet-modal-footer" });
     foot.append($("<button>", { type: "button", class: "kismet-modal-btn kismet-modal-btn--secondary" })
         .text(t("common.cancel")).on("click", function () {
@@ -267,17 +290,28 @@ function showModal(title, body, onOk) {
 
 function showConfirmModal(title, message, onYes, onCancel) {
     var overlay = $("<div>", { class: "kismet-modal-overlay" });
+    wlModalStyleImportant(overlay, "z-index", "999999");
     var modal = $("<div>", { class: "kismet-modal" });
-    modal.append($("<div>", { class: "kismet-modal-header" }).text(title));
-    modal.append($("<div>", { class: "whitelist-dialog" }).append(
-        $("<p>", {
-            css: {
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                color: "#1a1a1a",
-                margin: "0 0 8px 0"
-            }
-        }).text(message)));
+    wlModalStyleImportant(modal, "color", "#1a1a1a");
+    var hdr2 = $("<div>", { class: "kismet-modal-header" }).text(title);
+    wlModalStyleImportant(hdr2, "color", "#111111");
+    modal.append(hdr2);
+    var dlg2 = $("<div>", { class: "whitelist-dialog" });
+    wlModalStyleImportant(dlg2, "color", "#212121");
+    var msgP = $("<p>", { class: "kismet-modal-message" });
+    msgP.text(message);
+    wlModalStyleImportant(msgP, "color", "#1a1a1a");
+    wlModalStyleImportant(msgP, "background-color", "#f5f5f5");
+    wlModalStyleImportant(msgP, "border", "1px solid #cccccc");
+    wlModalStyleImportant(msgP, "padding", "12px");
+    wlModalStyleImportant(msgP, "border-radius", "4px");
+    wlModalStyleImportant(msgP, "max-height", "50vh");
+    wlModalStyleImportant(msgP, "overflow-y", "auto");
+    wlModalStyleImportant(msgP, "white-space", "pre-wrap");
+    wlModalStyleImportant(msgP, "word-break", "break-word");
+    wlModalStyleImportant(msgP, "margin", "0 0 8px 0");
+    dlg2.append(msgP);
+    modal.append(dlg2);
     var foot = $("<div>", { class: "kismet-modal-footer" });
     foot.append($("<button>", { type: "button", class: "kismet-modal-btn kismet-modal-btn--secondary" })
         .text(t("common.cancel")).on("click", function () {
@@ -522,41 +556,54 @@ function OpenWhitelistPanel() {
                     {
                         title: t("whitelist.edit"),
                         formatter: function () {
-                            return "<button class='btn btn-primary'>" + t("whitelist.edit") + "</button>";
-                        },
-                        cellClick: function (e, cell) {
-                            e.stopPropagation();
-                            openEditDialog(cell.getRow().getData());
+                            return "<button type=\"button\" class=\"btn btn-primary wl-row-edit-btn\">" +
+                                t("whitelist.edit") + "</button>";
                         }
                     },
                     {
                         title: t("whitelist.delete"),
                         formatter: function () {
-                            return "<button type=\"button\" class=\"btn wl-row-delete-btn\">" + t("whitelist.delete") + "</button>";
-                        },
-                        cellClick: function (e, cell) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            var mac = rowMacFromTabulatorRow(cell.getRow());
-                            if (!mac) {
-                                alert(t("common.error"));
-                                return;
-                            }
-                            showConfirmModal(t("common.confirm"), t("whitelist.confirm_delete"), function () {
-                                try {
-                                    kismet_whitelist_api.removeFromWhitelist(mac);
-                                    refreshTable();
-                                } catch (eRm) {
-                                    alert(String((eRm && eRm.message) ? eRm.message : eRm) || t("common.error"));
-                                }
-                            }, function () {
-                                wlUiDbg("wl_row_delete_modal_cancel", {});
-                            });
+                            return "<button type=\"button\" class=\"btn wl-row-delete-btn\">" +
+                                t("whitelist.delete") + "</button>";
                         }
                     }
                 ]
             });
             tabulator = myTabulator;
+            /* Tabulator 5: column definition cellClick is not fired for normal clicks (only via edit module).
+               Use table cellClick per https://tabulator.info/docs/5.6/events#cell */
+            tabulator.on("cellClick", function (e, cell) {
+                var t0 = e.target;
+                var btn = t0 && t0.closest ? t0.closest("button") : null;
+                if (!btn) {
+                    return;
+                }
+                if (btn.classList.contains("wl-row-edit-btn")) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openEditDialog(cell.getRow().getData());
+                    return;
+                }
+                if (btn.classList.contains("wl-row-delete-btn")) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var mac = rowMacFromTabulatorRow(cell.getRow());
+                    if (!mac) {
+                        alert(t("common.error"));
+                        return;
+                    }
+                    showConfirmModal(t("common.confirm"), t("whitelist.confirm_delete"), function () {
+                        try {
+                            kismet_whitelist_api.removeFromWhitelist(mac);
+                            refreshTable();
+                        } catch (eRm) {
+                            alert(String((eRm && eRm.message) ? eRm.message : eRm) || t("common.error"));
+                        }
+                    }, function () {
+                        wlUiDbg("wl_row_delete_modal_cancel", {});
+                    });
+                }
+            });
             tabulator.on("rowSelected", updateWlBulkSelectionUi);
             tabulator.on("rowDeselected", updateWlBulkSelectionUi);
             tabulator.on("tableBuilt", updateWlBulkSelectionUi);
@@ -588,7 +635,13 @@ function openEditDialog(existing) {
         rows: 4,
         placeholder: t("whitelist.notes_placeholder")
     }).val(existing ? existing.notes : "");
+    [macInput, nameInput, catSel, notes].forEach(function (ctrl) {
+        wlModalStyleImportant(ctrl, "background-color", "#ffffff");
+        wlModalStyleImportant(ctrl, "color", "#212121");
+        wlModalStyleImportant(ctrl, "border", "1px solid #bdbdbd");
+    });
     var box = $("<div>", { class: "whitelist-form-inner" });
+    wlModalStyleImportant(box, "color", "#212121");
     appendFieldRow(box, "whitelist.mac_address", macInput);
     appendFieldRow(box, "whitelist.device_name", nameInput);
     appendFieldRow(box, "whitelist.category", catSel);
