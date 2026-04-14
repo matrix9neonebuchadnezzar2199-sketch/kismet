@@ -657,16 +657,16 @@ function openEditDialog(existing) {
     var macInput = $("<input>", {
         type: "text",
         id: "wl-mac-" + suf,
-        autocomplete: "off",
         placeholder: t("whitelist.mac_placeholder")
     }).val(existing ? existing.mac : "");
+    macInput.attr("autocomplete", "off");
     if (existing) macInput.prop("disabled", true);
     var nameInput = $("<input>", {
         type: "text",
         id: "wl-name-" + suf,
-        autocomplete: "off",
         placeholder: t("whitelist.name_placeholder")
     }).val(existing ? existing.name : "");
+    nameInput.attr("autocomplete", "off");
     var catSel = buildCategorySelect(existing ? existing.category : "pc", "wl-cat-" + suf);
     var notes = $("<textarea>", {
         id: "wl-notes-" + suf,
