@@ -486,7 +486,7 @@ function OpenUnassociatedPanel() {
                     }
                 ]
             });
-            // Tabulator 5: rowClick on constructor is unreliable; bind here (see 2026-04-13開発LOG.md §4).
+            // Tabulator 5: rowClick on constructor is unreliable; bind here (see docs/fork/2026-04-13開発LOG.md §4).
             unassocTable.on("rowClick", function (e, row) {
                 var t = e.target;
                 if (t && t.closest) {

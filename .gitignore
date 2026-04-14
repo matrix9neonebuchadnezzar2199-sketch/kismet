@@ -97,6 +97,7 @@ config.sub.dh*
 
 # built binaries
 kismet
+kismet_server
 
 libkismetdatasource.a
 

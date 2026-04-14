@@ -4,6 +4,17 @@
 
 公式ドキュメント: [Kismet docs](https://www.kismetwireless.net/docs/readme/intro/kismet/)
 
+**補助:** 直下のファイル一覧が長い理由と、よく使うフォルダの案内は **[`docs/README.md`](docs/README.md)** にまとめています。
+
+<details>
+<summary><strong>リポジトリ直下のファイルがとても多い理由（クリックで開く）</strong></summary>
+
+- Kismet は歴史的に **ビルド対象の `.cc` / `.h` がリポジトリ直下**に置かれています。フォークでも **上流との差分を追いやすくする**ため、この構造は維持しています。
+- **このフォークでいじることが多いのは** [`http_data/`](http_data/)（Web UI）、[`scripts/`](scripts/)（インストール補助）、[`conf/`](conf/)（設定）です。
+- 開発ログ・索引はすべて [`docs/`](docs/) 以下です（GitHub のファイル一覧で `docs` フォルダを開くと読みやすいです）。
+
+</details>
+
 ---
 
 ## 日本語（初心者向け）
