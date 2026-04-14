@@ -383,21 +383,10 @@ function OpenWhitelistPanel() {
     var tableHostId = "whitelist-table-h-" + Date.now();
     var myTabulator = null;
     var toolbar = $("<div>", { class: "whitelist-toolbar" });
-    (function () {
-        var addBtn = document.createElement("button");
-        addBtn.type = "button";
-        addBtn.className = "btn btn-primary wl-toolbar-add-btn";
-        addBtn.textContent = t("whitelist.add_single");
-        addBtn.addEventListener("click", function (ev) {
-            ev.preventDefault();
-            ev.stopPropagation();
-            if (typeof ev.stopImmediatePropagation === "function") {
-                ev.stopImmediatePropagation();
-            }
-            openEditDialog(null);
-        });
-        toolbar.append(addBtn);
-    })();
+    toolbar.append($("<button>", {
+        type: "button",
+        class: "btn btn-primary wl-toolbar-add-btn"
+    }).text(t("whitelist.add_single")));
     var fileInput = $("<input>", { type: "file", accept: ".csv", css: { display: "none" } });
     fileInput.attr("data-import", "import_csv");
     toolbar.append($("<button>", { type: "button", class: "btn btn-success" }).text(t("whitelist.import_csv")).on("click", function () {
@@ -423,6 +412,17 @@ function OpenWhitelistPanel() {
     });
     toolbar.append(search);
     wrap.append(toolbar);
+    /* Delegated click: survives jsPanel/Tabulator focus quirks better than a raw DOM listener on the button. */
+    wrap.on("click", ".wl-toolbar-add-btn", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+            openEditDialog(null);
+        } catch (exAdd) {
+            wlUiDbg("wl_toolbar_add_err", { err: String(exAdd) });
+            alert(t("common.error"));
+        }
+    });
 
     var tableHost = $("<div>", { id: tableHostId });
     wrap.append(tableHost);
@@ -570,6 +570,16 @@ function OpenWhitelistPanel() {
                         hozAlign: "center",
                         vertAlign: "middle",
                         formatter: function (cell) {
+                            /* Snapshot at render time: Tabulator's cell component can be invalid on later click. */
+                            var rowSnap = {};
+                            try {
+                                var rd = cell.getRow().getData();
+                                if (rd && typeof rd === "object") {
+                                    rowSnap = Object.assign({}, rd);
+                                }
+                            } catch (eSnap) {
+                                rowSnap = {};
+                            }
                             var btn = document.createElement("button");
                             btn.type = "button";
                             btn.className = "btn btn-primary wl-row-edit-btn";
@@ -580,12 +590,8 @@ function OpenWhitelistPanel() {
                                 if (typeof ev.stopImmediatePropagation === "function") {
                                     ev.stopImmediatePropagation();
                                 }
-                                try {
-                                    openEditDialog(cell.getRow().getData());
-                                } catch (exEdit) {
-                                    wlUiDbg("wl_row_edit_err", { err: String(exEdit) });
-                                    alert(t("common.error"));
-                                }
+                                var hasMac = rowSnap && String(rowSnap.mac || "").trim();
+                                openEditDialog(hasMac ? rowSnap : null);
                             });
                             return btn;
                         }
@@ -595,6 +601,15 @@ function OpenWhitelistPanel() {
                         hozAlign: "center",
                         vertAlign: "middle",
                         formatter: function (cell) {
+                            var macSnap = "";
+                            try {
+                                var dr = cell.getRow().getData();
+                                if (dr && dr.mac != null) {
+                                    macSnap = String(dr.mac).trim();
+                                }
+                            } catch (eMac) {
+                                macSnap = "";
+                            }
                             var btn = document.createElement("button");
                             btn.type = "button";
                             btn.className = "btn wl-row-delete-btn";
@@ -605,7 +620,7 @@ function OpenWhitelistPanel() {
                                 if (typeof ev.stopImmediatePropagation === "function") {
                                     ev.stopImmediatePropagation();
                                 }
-                                var mac = rowMacFromTabulatorRow(cell.getRow());
+                                var mac = macSnap;
                                 if (!mac) {
                                     alert(t("common.error"));
                                     return;

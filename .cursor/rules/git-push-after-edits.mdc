@@ -1,0 +1,17 @@
+---
+description: After code changes in this repo, commit and push with a clear message
+alwaysApply: true
+---
+
+# Git: commit and push after edits (kismet2)
+
+When you **change project files** (source, tests, assets under version control, config that ships with the app), finish the task by **recording those edits on the remote**:
+
+1. Run `git status` and review the diff.
+2. **`git add`** only what belongs to the change set (do not bundle unrelated local edits such as personal notes unless the user asked).
+3. **`git commit -m "…"`** with a **short, accurate English summary** of what changed and why (complete sentence; no vague messages like "fix" alone).
+4. **`git push origin`** to the current branch (usually `master`).
+
+If the user explicitly asked **not** to push, or only to prepare a commit, follow that instead.
+
+If push fails (auth, network), report the error and leave clear next steps; do not claim success.
