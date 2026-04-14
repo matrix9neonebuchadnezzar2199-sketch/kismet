@@ -47,6 +47,8 @@ window.kismet_enhanced_run_async = function () {
                     kismet_ui_whitelist_module.registerSidebar) {
                     kismet_ui_whitelist_module.registerSidebar();
                     console.log("[enhanced] whitelist sidebar registered");
+                } else {
+                    console.warn("[enhanced] kismet_ui_whitelist_module missing; sidebar item not added");
                 }
             } catch (e) { console.error("whitelist sidebar", e); }
             try {
@@ -56,6 +58,15 @@ window.kismet_enhanced_run_async = function () {
                     console.log("[enhanced] enhanced UI registered");
                 }
             } catch (e) { console.error("enhanced ui", e); }
+            try {
+                var ds = document.getElementById("device_search");
+                if (ds && typeof kismet_i18n !== "undefined" && kismet_i18n.t) {
+                    var ph = kismet_i18n.t("common.filter_placeholder");
+                    if (ph && ph !== "common.filter_placeholder") {
+                        ds.setAttribute("placeholder", ph);
+                    }
+                }
+            } catch (ePh) { /* ignore */ }
             document.dispatchEvent(new CustomEvent("kismet-enhanced-ready"));
         })
         .catch(function (err) {

@@ -405,6 +405,7 @@ exports.AddDeviceIcon = (matcher) => {
  *  ie, ['some.field.def'].  Multiple fields and complex fields could be represented
  *  as ['some.field.def', 'some.second.field', ['some.complex/field.path', 'field.foo']]
  * selector: function(data) returning true for color or false for ignore
+ * cssClass: optional CSS class on the Tabulator row (e.g. for readable text on dark tint)
  */
 exports.AddDeviceRowHighlight = function(options) {
 
@@ -2097,13 +2098,19 @@ exports.InitializeDeviceTable = function(element) {
         },
 
         rowFormatter: function(row) {
+            var el = row.getElement();
+            el.classList.remove("kismet-row-whitelist-trusted");
+            el.style.backgroundColor = "";
             for (const ri of DeviceRowHighlights) {
                 if (!ri['enable'])
                     continue;
 
                 try {
                     if (ri['selector'](row.getData()['original_data'])) {
-                        row.getElement().style.backgroundColor = ri['color'];
+                        el.style.backgroundColor = ri['color'];
+                        if (ri['cssClass']) {
+                            el.classList.add(ri['cssClass']);
+                        }
                     }
                 } catch (e) {
                     ;

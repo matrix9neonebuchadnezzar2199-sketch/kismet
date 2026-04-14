@@ -1,8 +1,13 @@
-(
-    typeof define === "function" ? function (m) { define("kismet-ui-enhanced-js", m); } :
-    typeof exports === "object" ? function (m) { module.exports = m(); } :
-    function (m) { this.kismet_ui_enhanced_module = m(); }
-)(function () {
+(function (root, factory) {
+    var api = factory();
+    if (typeof define === "function" && define.amd) {
+        define("kismet-ui-enhanced-js", [], function () { return api; });
+    }
+    if (typeof module === "object" && module.exports) {
+        module.exports = api;
+    }
+    root.kismet_ui_enhanced_module = api;
+}(typeof globalThis !== "undefined" ? globalThis : this, function () {
 
 "use strict";
 
@@ -78,8 +83,9 @@ exports.registerEnhanced = function () {
         descriptionKey: "highlight.whitelisted_trusted_desc",
         description: "MAC is on the local whitelist",
         priority: 30,
-        defaultcolor: "#D4EDDA",
+        defaultcolor: "#1b4332",
         defaultenable: true,
+        cssClass: "kismet-row-whitelist-trusted",
         fields: ["kismet.device.base.macaddr"],
         selector: function (data) {
             var mac = data["kismet.device.base.macaddr"];
@@ -144,4 +150,4 @@ exports.registerEnhanced = function () {
 
 return exports;
 
-});
+}));

@@ -1,8 +1,13 @@
-(
-    typeof define === "function" ? function (m) { define("kismet-i18n-js", m); } :
-    typeof exports === "object" ? function (m) { module.exports = m(); } :
-    function (m) { this.kismet_i18n = m(); }
-)(function () {
+(function (root, factory) {
+    var api = factory();
+    if (typeof define === "function" && define.amd) {
+        define("kismet-i18n-js", [], function () { return api; });
+    }
+    if (typeof module === "object" && module.exports) {
+        module.exports = api;
+    }
+    root.kismet_i18n = api;
+}(typeof globalThis !== "undefined" ? globalThis : this, function () {
 
 "use strict";
 
@@ -92,15 +97,19 @@ function preinitUiString(key) {
 }
 
 exports.t = function (key, opts) {
+    var pre = preinitUiString(key);
     if (window.i18next && typeof window.i18next.t === "function") {
-        if (window.i18next.isInitialized === false) {
-            var pb = preinitUiString(key);
-            return pb !== undefined ? pb : key;
+        // Before init, or when i18next leaves isInitialized undefined, avoid returning raw keys.
+        if (!window.i18next.isInitialized) {
+            return pre !== undefined ? pre : key;
         }
-        return window.i18next.t(key, opts);
+        var tr = window.i18next.t(key, opts);
+        if ((tr === key || tr === "") && pre !== undefined) {
+            return pre;
+        }
+        return tr;
     }
-    var pb2 = preinitUiString(key);
-    return pb2 !== undefined ? pb2 : key;
+    return pre !== undefined ? pre : key;
 };
 
 exports.changeLanguage = function (lng) {
@@ -128,4 +137,4 @@ exports.getCurrentLanguage = function () {
 
 return exports;
 
-});
+}));

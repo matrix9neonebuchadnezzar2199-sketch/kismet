@@ -193,6 +193,26 @@
     white-space: nowrap;
 }
 
+/* Main device table: whitelisted rows — dark tint + light text (readable on dark UI theme) */
+.tabulator .tabulator-row.kismet-row-whitelist-trusted {
+    background-color: #1b4332 !important;
+    box-shadow: inset 4px 0 0 #66bb6a;
+}
+
+.tabulator .tabulator-row.kismet-row-whitelist-trusted .tabulator-cell {
+    color: #e8f5e9 !important;
+}
+
+.tabulator .tabulator-row.kismet-row-whitelist-trusted .tabulator-cell a,
+.tabulator .tabulator-row.kismet-row-whitelist-trusted .tabulator-cell .kismet-signal-cell {
+    color: #c8e6c9 !important;
+}
+
+.tabulator .tabulator-row.kismet-row-whitelist-trusted .device-name-wl-safe {
+    background: #e8f5e9;
+    color: #1b4332;
+}
+
 .device-name-wl-text {
     min-width: 0;
 }

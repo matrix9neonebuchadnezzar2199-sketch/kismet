@@ -1,8 +1,13 @@
-(
-    typeof define === "function" ? function (m) { define("kismet-ui-signal-filter-js", m); } :
-    typeof exports === "object" ? function (m) { module.exports = m(); } :
-    function (m) { this.kismet_ui_signal_filter = m(); }
-)(function () {
+(function (root, factory) {
+    var api = factory();
+    if (typeof define === "function" && define.amd) {
+        define("kismet-ui-signal-filter-js", [], function () { return api; });
+    }
+    if (typeof module === "object" && module.exports) {
+        module.exports = api;
+    }
+    root.kismet_ui_signal_filter = api;
+}(typeof globalThis !== "undefined" ? globalThis : this, function () {
 
 "use strict";
 
@@ -127,4 +132,4 @@ exports.createSignalFilterBar = function (tableSelector, options) {
 
 return exports;
 
-});
+}));

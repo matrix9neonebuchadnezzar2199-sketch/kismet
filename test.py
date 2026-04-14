@@ -254,6 +254,8 @@ class TestJavaScriptFiles(unittest.TestCase):
         content = self._read("http_data/js/kismet_ui_whitelist.js")
         self.assertIn('AddSidebarItem', content)
         self.assertIn('whitelist', content.lower())
+        self.assertIn("root.kismet_ui_whitelist_module", content,
+            "AMD 環境でもグローバルに登録し registerSidebar が動くこと")
 
     def test_enhanced_device_column(self):
         """メインUIにホワイトリスト列が追加されているか"""
@@ -266,6 +268,7 @@ class TestJavaScriptFiles(unittest.TestCase):
         content = self._read("http_data/js/kismet_ui_enhanced.js")
         self.assertIn('AddDeviceRowHighlight', content)
         self.assertIn('Whitelisted device', content)
+        self.assertIn('kismet-row-whitelist-trusted', content)
         self.assertIn('WrapDeviceColumnRender', content)
 
     def test_kismet_ui_wrap_device_column(self):
@@ -350,7 +353,7 @@ class TestCSSFile(unittest.TestCase):
         """ホワイトリストのCSSが定義されているか"""
         content = self._read()
         for cls in ['.whitelist-toolbar', '.whitelist-approved', '.whitelist-unknown',
-                    '.device-name-wl-safe']:
+                    '.device-name-wl-safe', '.kismet-row-whitelist-trusted']:
             self.assertIn(cls, content,
                 f"CSSに '{cls}' が定義されていません")
 

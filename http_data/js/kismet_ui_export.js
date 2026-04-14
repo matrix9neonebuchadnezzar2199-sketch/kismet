@@ -1,8 +1,13 @@
-(
-    typeof define === "function" ? function (m) { define("kismet-ui-export-js", m); } :
-    typeof exports === "object" ? function (m) { module.exports = m(); } :
-    function (m) { this.kismet_ui_export = m(); }
-)(function () {
+(function (root, factory) {
+    var api = factory();
+    if (typeof define === "function" && define.amd) {
+        define("kismet-ui-export-js", [], function () { return api; });
+    }
+    if (typeof module === "object" && module.exports) {
+        module.exports = api;
+    }
+    root.kismet_ui_export = api;
+}(typeof globalThis !== "undefined" ? globalThis : this, function () {
 
 "use strict";
 
@@ -135,4 +140,4 @@ exports.createExportButtons = function (containerSelector, getDataCallback, opti
 
 return exports;
 
-});
+}));
