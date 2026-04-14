@@ -150,6 +150,13 @@
     flex-wrap: wrap;
 }
 
+/* Whitelist table: row delete must receive clicks above row/selection hit areas */
+.tabulator .tabulator-cell .wl-row-delete-btn {
+    position: relative;
+    z-index: 3;
+    pointer-events: auto;
+}
+
 .whitelist-sel-all-wrap {
     display: inline-flex;
     align-items: center;

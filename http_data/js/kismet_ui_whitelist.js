@@ -88,25 +88,63 @@ function pushMacDedup(seen, macs, m) {
     }
 }
 
-/** MACs for bulk delete: scan isSelected() first (matches UI); then getSelected* APIs. */
+/** MAC string from a Tabulator row (getData and mac column cell fallback). */
+function rowMacFromTabulatorRow(r) {
+    if (!r) return "";
+    try {
+        var d = r.getData();
+        if (d && d.mac != null && String(d.mac).trim()) {
+            return String(d.mac).trim();
+        }
+    } catch (e0) {
+        /* ignore */
+    }
+    try {
+        if (typeof r.getCell === "function") {
+            var c = r.getCell("mac");
+            if (c && c.getValue() != null && String(c.getValue()).trim()) {
+                return String(c.getValue()).trim();
+            }
+        }
+    } catch (e1) {
+        /* ignore */
+    }
+    return "";
+}
+
+/**
+ * MACs for bulk delete: union of (selected rows), (getSelected*), and toolbar「全選択」
+ * when rows look selected but Tabulator selection APIs are empty.
+ */
 function collectWlBulkDeleteMacs() {
     var seen = {};
     var macs = [];
-    if (tabulator) {
+    if (!tabulator) return macs;
+
+    try {
+        tabulator.getRows().forEach(function (r) {
+            if (r.isSelected()) {
+                pushMacDedup(seen, macs, rowMacFromTabulatorRow(r));
+            }
+        });
+    } catch (eSel) {
+        /* ignore */
+    }
+
+    getWlSelectedRowDatas().forEach(function (row) {
+        pushMacDedup(seen, macs, row && row.mac);
+    });
+
+    if (!macs.length && whitelistPanelWrap && whitelistPanelWrap.length) {
         try {
-            tabulator.getRows().forEach(function (r) {
-                if (r.isSelected()) {
-                    pushMacDedup(seen, macs, r.getData().mac);
-                }
-            });
-        } catch (eScan) {
+            if (whitelistPanelWrap.find(".js-wl-sel-all").prop("checked")) {
+                tabulator.getRows().forEach(function (r) {
+                    pushMacDedup(seen, macs, rowMacFromTabulatorRow(r));
+                });
+            }
+        } catch (eAll) {
             /* ignore */
         }
-    }
-    if (!macs.length) {
-        getWlSelectedRowDatas().forEach(function (row) {
-            pushMacDedup(seen, macs, row && row.mac);
-        });
     }
     return macs;
 }
@@ -350,7 +388,6 @@ function OpenWhitelistPanel() {
                         titleFormatter: "rowSelection",
                         hozAlign: "center",
                         headerSort: false,
-                        frozen: true,
                         width: 40,
                         vertAlign: "middle"
                     },
@@ -375,10 +412,19 @@ function OpenWhitelistPanel() {
                             return "<button type=\"button\" class=\"btn wl-row-delete-btn\">" + t("whitelist.delete") + "</button>";
                         },
                         cellClick: function (e, cell) {
+                            e.preventDefault();
                             e.stopPropagation();
-                            if (confirm(t("whitelist.confirm_delete"))) {
-                                kismet_whitelist_api.removeFromWhitelist(cell.getRow().getData().mac);
+                            var mac = rowMacFromTabulatorRow(cell.getRow());
+                            if (!mac) {
+                                alert(t("common.error"));
+                                return;
+                            }
+                            if (!confirm(t("whitelist.confirm_delete"))) return;
+                            try {
+                                kismet_whitelist_api.removeFromWhitelist(mac);
                                 refreshTable();
+                            } catch (eRm) {
+                                alert(String((eRm && eRm.message) ? eRm.message : eRm) || t("common.error"));
                             }
                         }
                     }

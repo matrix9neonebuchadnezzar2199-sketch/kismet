@@ -143,8 +143,9 @@ function dispatchChanged() {
 }
 
 function normalizeMac(mac) {
-    if (!mac || typeof mac !== "string") return "";
-    return mac.trim().toUpperCase().replace(/-/g, ":");
+    if (mac === undefined || mac === null || mac === "") return "";
+    var s = typeof mac === "string" ? mac : String(mac);
+    return s.trim().toUpperCase().replace(/-/g, ":");
 }
 
 function validateMacFormat(mac) {
@@ -164,7 +165,14 @@ function loadStorage() {
 }
 
 function saveStorage(arr) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    } catch (e) {
+        if (typeof console !== "undefined" && console.error) {
+            console.error("[whitelist] localStorage.setItem failed", e);
+        }
+        throw e;
+    }
     rebuildCache(arr);
     dispatchChanged();
 }
@@ -311,10 +319,13 @@ exports.removeFromWhitelist = function (mac) {
 };
 
 exports.removeBulkFromWhitelist = function (macs) {
+    if (!macs || !macs.length) return;
     var set = new Set();
     for (var i = 0; i < macs.length; i++) {
-        set.add(normalizeMac(macs[i]));
+        var nm = normalizeMac(macs[i]);
+        if (nm) set.add(nm);
     }
+    if (!set.size) return;
     var list = loadStorage().filter(function (e) { return !set.has(normalizeMac(e.mac)); });
     saveStorage(list);
 };
