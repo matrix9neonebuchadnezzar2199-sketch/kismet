@@ -25,8 +25,10 @@ function categoryOptions() {
     ];
 }
 
-function buildCategorySelect(val) {
-    var sel = $("<select>");
+function buildCategorySelect(val, domId) {
+    var attrs = {};
+    if (domId) attrs.id = domId;
+    var sel = $("<select>", attrs);
     var opts = categoryOptions();
     for (var i = 0; i < opts.length; i++) {
         sel.append($("<option>", { value: opts[i].v }).text(opts[i].l));
@@ -35,16 +37,30 @@ function buildCategorySelect(val) {
     return sel;
 }
 
+function wlFieldSuffix() {
+    return String(Math.floor(Math.random() * 1e9));
+}
+
+function appendFieldRow(container, labelKey, control) {
+    var row = $("<div>", { class: "whitelist-field-row" });
+    var cid = control.attr("id");
+    row.append($("<label>", cid ? { for: cid } : {}).text(t(labelKey)));
+    row.append(control);
+    container.append(row);
+}
+
 function showModal(title, body, onOk) {
     var overlay = $("<div>", { class: "kismet-modal-overlay" });
     var modal = $("<div>", { class: "kismet-modal" });
     modal.append($("<div>", { class: "kismet-modal-header" }).text(title));
     modal.append($("<div>", { class: "whitelist-dialog" }).append(body));
     var foot = $("<div>", { class: "kismet-modal-footer" });
-    foot.append($("<button>", { type: "button" }).text(t("common.cancel")).on("click", function () {
+    foot.append($("<button>", { type: "button", class: "kismet-modal-btn kismet-modal-btn--secondary" })
+        .text(t("common.cancel")).on("click", function () {
         overlay.remove();
     }));
-    foot.append($("<button>", { type: "button", class: "btn-primary" }).text(t("common.ok")).on("click", function () {
+    foot.append($("<button>", { type: "button", class: "kismet-modal-btn kismet-modal-btn--primary" })
+        .text(t("common.ok")).on("click", function () {
         onOk(function () { overlay.remove(); });
     }));
     modal.append(foot);
@@ -182,39 +198,59 @@ function OpenWhitelistPanel() {
 }
 
 function openEditDialog(existing) {
-    var macInput = $("<input>", { type: "text" }).val(existing ? existing.mac : "");
+    var suf = wlFieldSuffix();
+    var macInput = $("<input>", {
+        type: "text",
+        id: "wl-mac-" + suf,
+        autocomplete: "off",
+        placeholder: t("whitelist.mac_placeholder")
+    }).val(existing ? existing.mac : "");
     if (existing) macInput.prop("disabled", true);
-    var nameInput = $("<input>", { type: "text" }).val(existing ? existing.name : "");
-    var catSel = buildCategorySelect(existing ? existing.category : "pc");
-    var notes = $("<textarea>").val(existing ? existing.notes : "");
-    var box = $("<div>");
-    box.append($("<label>").text(t("whitelist.mac_address"))).append(macInput);
-    box.append($("<label>").text(t("whitelist.device_name"))).append(nameInput);
-    box.append($("<label>").text(t("whitelist.category"))).append(catSel);
-    box.append($("<label>").text(t("whitelist.notes"))).append(notes);
+    var nameInput = $("<input>", {
+        type: "text",
+        id: "wl-name-" + suf,
+        autocomplete: "off",
+        placeholder: t("whitelist.name_placeholder")
+    }).val(existing ? existing.name : "");
+    var catSel = buildCategorySelect(existing ? existing.category : "pc", "wl-cat-" + suf);
+    var notes = $("<textarea>", {
+        id: "wl-notes-" + suf,
+        rows: 4,
+        placeholder: t("whitelist.notes_placeholder")
+    }).val(existing ? existing.notes : "");
+    var box = $("<div>", { class: "whitelist-form-inner" });
+    appendFieldRow(box, "whitelist.mac_address", macInput);
+    appendFieldRow(box, "whitelist.device_name", nameInput);
+    appendFieldRow(box, "whitelist.category", catSel);
+    appendFieldRow(box, "whitelist.notes", notes);
     showModal(existing ? t("whitelist.edit_title") : t("whitelist.add_title"), box, function (done) {
-        var mac = macInput.val();
-        if (!validateMac(mac)) {
-            alert(t("common.error"));
+        var macNorm = String(macInput.val() || "").trim().toUpperCase().replace(/-/g, ":");
+        if (!validateMac(macInput.val())) {
+            alert(t("whitelist.mac_invalid"));
             return;
         }
         try {
             if (existing) {
-                kismet_whitelist_api.updateWhitelistEntry(mac, {
+                kismet_whitelist_api.updateWhitelistEntry(macNorm, {
                     name: nameInput.val(),
                     category: catSel.val(),
                     notes: notes.val()
                 });
             } else {
                 kismet_whitelist_api.addToWhitelist({
-                    mac: mac,
+                    mac: macNorm,
                     name: nameInput.val(),
                     category: catSel.val(),
                     notes: notes.val()
                 });
             }
         } catch (e) {
-            alert(t("common.error"));
+            var msg = String((e && e.message) ? e.message : e);
+            if (msg.toLowerCase().indexOf("duplicate") >= 0) {
+                alert(t("whitelist.duplicate_mac"));
+            } else {
+                alert(msg || t("common.error"));
+            }
             return;
         }
         refreshTable();

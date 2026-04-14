@@ -141,6 +141,11 @@
     "import_error": "CSV import failed",
     "edit_title": "Edit Whitelist Entry",
     "add_title": "Add to Whitelist",
+    "mac_placeholder": "e.g. AA:BB:CC:DD:EE:FF",
+    "name_placeholder": "Optional display name",
+    "notes_placeholder": "Optional notes",
+    "mac_invalid": "Enter a valid MAC address (six pairs of hex digits, with colons or hyphens).",
+    "duplicate_mac": "This MAC address is already on the whitelist.",
     "select_all": "Select All",
     "selected_count": "{{count}} selected",
     "categories": {

@@ -141,6 +141,11 @@
     "import_error": "CSV取込に失敗しました",
     "edit_title": "ホワイトリスト編集",
     "add_title": "ホワイトリストに追加",
+    "mac_placeholder": "例: AA:BB:CC:DD:EE:FF",
+    "name_placeholder": "表示名（任意）",
+    "notes_placeholder": "メモ（任意）",
+    "mac_invalid": "MACアドレスの形式が正しくありません（6組の16進数をコロンまたはハイフンで）。",
+    "duplicate_mac": "このMACアドレスはすでにホワイトリストに登録されています。",
     "select_all": "全選択",
     "selected_count": "{{count}}件選択中",
     "categories": {
