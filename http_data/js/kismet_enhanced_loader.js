@@ -24,29 +24,31 @@ try {
     }
 } catch(e) {}
 
-// Guard flag to prevent double initialization
-var _enhancedInitialized = false;
+/** Single shared init promise so autoStart + index.html both await the same i18n chain. */
+var _enhancedInitPromise = null;
 
 window.kismet_enhanced_run_async = function () {
-    if (_enhancedInitialized) {
-        console.log("[enhanced] already initialized, skipping duplicate call");
-        return Promise.resolve();
+    if (_enhancedInitPromise !== null) {
+        return _enhancedInitPromise;
     }
-    _enhancedInitialized = true;
-
     if (typeof kismet_i18n === "undefined" || !kismet_i18n.initI18n) {
         console.error("kismet_enhanced_loader: kismet_i18n missing");
-        return Promise.resolve();
+        _enhancedInitPromise = Promise.resolve();
+        return _enhancedInitPromise;
     }
-    return kismet_i18n.initI18n()
+    _enhancedInitPromise = kismet_i18n.initI18n()
         .then(function () {
-            console.log("[enhanced] i18n initialized, lang=" +
-                (window.i18next ? window.i18next.language : "?"));
+            if (typeof console !== "undefined" && console.debug) {
+                console.debug("[enhanced] i18n initialized, lang=" +
+                    (window.i18next ? window.i18next.language : "?"));
+            }
             try {
                 if (typeof kismet_ui_whitelist_module !== "undefined" &&
                     kismet_ui_whitelist_module.registerSidebar) {
                     kismet_ui_whitelist_module.registerSidebar();
-                    console.log("[enhanced] whitelist sidebar registered");
+                    if (typeof console !== "undefined" && console.debug) {
+                        console.debug("[enhanced] whitelist sidebar registered");
+                    }
                 } else {
                     console.warn("[enhanced] kismet_ui_whitelist_module missing; sidebar item not added");
                 }
@@ -55,7 +57,9 @@ window.kismet_enhanced_run_async = function () {
                 if (typeof kismet_ui_enhanced_module !== "undefined" &&
                     kismet_ui_enhanced_module.registerEnhanced) {
                     kismet_ui_enhanced_module.registerEnhanced();
-                    console.log("[enhanced] enhanced UI registered");
+                    if (typeof console !== "undefined" && console.debug) {
+                        console.debug("[enhanced] enhanced UI registered");
+                    }
                 }
             } catch (e) { console.error("enhanced ui", e); }
             try {
@@ -72,6 +76,7 @@ window.kismet_enhanced_run_async = function () {
         .catch(function (err) {
             console.error("kismet_enhanced_loader init failed", err);
         });
+    return _enhancedInitPromise;
 };
 
 // AUTO-INVOKE (scripts: kismet_i18n, kismet_whitelist_api, kismet_ui_signal_filter,
@@ -83,7 +88,9 @@ function autoStart() {
         setTimeout(autoStart, 500);
         return;
     }
-    console.log("[enhanced] Kismet core ready, starting enhanced UI...");
+    if (typeof console !== "undefined" && console.debug) {
+        console.debug("[enhanced] Kismet core ready, starting enhanced UI...");
+    }
     kismet_enhanced_run_async();
 }
 

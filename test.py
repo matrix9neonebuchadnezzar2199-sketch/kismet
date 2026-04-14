@@ -535,7 +535,8 @@ class TestKaliRealWorldFixes(unittest.TestCase):
     def test_enhanced_loader_has_guard_flag(self):
         path = BASE_DIR / "http_data/js/kismet_enhanced_loader.js"
         content = path.read_text(encoding="utf-8")
-        self.assertIn("_enhancedInitialized", content)
+        self.assertIn("_enhancedInitPromise", content,
+            "拡張UI初期化は単一 Promise で重複 await できること")
 
     def test_enhanced_loader_has_autostart(self):
         path = BASE_DIR / "http_data/js/kismet_enhanced_loader.js"
