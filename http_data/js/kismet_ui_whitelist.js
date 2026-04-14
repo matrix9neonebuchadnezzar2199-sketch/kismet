@@ -383,9 +383,21 @@ function OpenWhitelistPanel() {
     var tableHostId = "whitelist-table-h-" + Date.now();
     var myTabulator = null;
     var toolbar = $("<div>", { class: "whitelist-toolbar" });
-    toolbar.append($("<button>", { type: "button", class: "btn btn-primary" }).text(t("whitelist.add_single")).on("click", function () {
-        openEditDialog(null);
-    }));
+    (function () {
+        var addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "btn btn-primary wl-toolbar-add-btn";
+        addBtn.textContent = t("whitelist.add_single");
+        addBtn.addEventListener("click", function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (typeof ev.stopImmediatePropagation === "function") {
+                ev.stopImmediatePropagation();
+            }
+            openEditDialog(null);
+        });
+        toolbar.append(addBtn);
+    })();
     var fileInput = $("<input>", { type: "file", accept: ".csv", css: { display: "none" } });
     fileInput.attr("data-import", "import_csv");
     toolbar.append($("<button>", { type: "button", class: "btn btn-success" }).text(t("whitelist.import_csv")).on("click", function () {
@@ -555,55 +567,66 @@ function OpenWhitelistPanel() {
                     { field: "added_date", title: t("whitelist.added_date") },
                     {
                         title: t("whitelist.edit"),
-                        formatter: function () {
-                            return "<button type=\"button\" class=\"btn btn-primary wl-row-edit-btn\">" +
-                                t("whitelist.edit") + "</button>";
+                        hozAlign: "center",
+                        vertAlign: "middle",
+                        formatter: function (cell) {
+                            var btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.className = "btn btn-primary wl-row-edit-btn";
+                            btn.textContent = t("whitelist.edit");
+                            btn.addEventListener("click", function (ev) {
+                                ev.preventDefault();
+                                ev.stopPropagation();
+                                if (typeof ev.stopImmediatePropagation === "function") {
+                                    ev.stopImmediatePropagation();
+                                }
+                                try {
+                                    openEditDialog(cell.getRow().getData());
+                                } catch (exEdit) {
+                                    wlUiDbg("wl_row_edit_err", { err: String(exEdit) });
+                                    alert(t("common.error"));
+                                }
+                            });
+                            return btn;
                         }
                     },
                     {
                         title: t("whitelist.delete"),
-                        formatter: function () {
-                            return "<button type=\"button\" class=\"btn wl-row-delete-btn\">" +
-                                t("whitelist.delete") + "</button>";
+                        hozAlign: "center",
+                        vertAlign: "middle",
+                        formatter: function (cell) {
+                            var btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.className = "btn wl-row-delete-btn";
+                            btn.textContent = t("whitelist.delete");
+                            btn.addEventListener("click", function (ev) {
+                                ev.preventDefault();
+                                ev.stopPropagation();
+                                if (typeof ev.stopImmediatePropagation === "function") {
+                                    ev.stopImmediatePropagation();
+                                }
+                                var mac = rowMacFromTabulatorRow(cell.getRow());
+                                if (!mac) {
+                                    alert(t("common.error"));
+                                    return;
+                                }
+                                showConfirmModal(t("common.confirm"), t("whitelist.confirm_delete"), function () {
+                                    try {
+                                        kismet_whitelist_api.removeFromWhitelist(mac);
+                                        refreshTable();
+                                    } catch (eRm) {
+                                        alert(String((eRm && eRm.message) ? eRm.message : eRm) || t("common.error"));
+                                    }
+                                }, function () {
+                                    wlUiDbg("wl_row_delete_modal_cancel", {});
+                                });
+                            });
+                            return btn;
                         }
                     }
                 ]
             });
             tabulator = myTabulator;
-            /* Tabulator 5: column definition cellClick is not fired for normal clicks (only via edit module).
-               Use table cellClick per https://tabulator.info/docs/5.6/events#cell */
-            tabulator.on("cellClick", function (e, cell) {
-                var t0 = e.target;
-                var btn = t0 && t0.closest ? t0.closest("button") : null;
-                if (!btn) {
-                    return;
-                }
-                if (btn.classList.contains("wl-row-edit-btn")) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    openEditDialog(cell.getRow().getData());
-                    return;
-                }
-                if (btn.classList.contains("wl-row-delete-btn")) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    var mac = rowMacFromTabulatorRow(cell.getRow());
-                    if (!mac) {
-                        alert(t("common.error"));
-                        return;
-                    }
-                    showConfirmModal(t("common.confirm"), t("whitelist.confirm_delete"), function () {
-                        try {
-                            kismet_whitelist_api.removeFromWhitelist(mac);
-                            refreshTable();
-                        } catch (eRm) {
-                            alert(String((eRm && eRm.message) ? eRm.message : eRm) || t("common.error"));
-                        }
-                    }, function () {
-                        wlUiDbg("wl_row_delete_modal_cancel", {});
-                    });
-                }
-            });
             tabulator.on("rowSelected", updateWlBulkSelectionUi);
             tabulator.on("rowDeselected", updateWlBulkSelectionUi);
             tabulator.on("tableBuilt", updateWlBulkSelectionUi);
