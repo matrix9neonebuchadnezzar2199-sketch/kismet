@@ -72,11 +72,35 @@ exports.initI18n = function () {
     });
 };
 
+function preinitUiString(key) {
+    var lng = "ja";
+    try {
+        if (localStorage.getItem("i18nextLng")) {
+            lng = localStorage.getItem("i18nextLng");
+        }
+    } catch (e) { /* ignore */ }
+    var en = {
+        "common.minimize": "Minimize",
+        "common.filter_placeholder": "Filter…"
+    };
+    var ja = {
+        "common.minimize": "\u6700\u5c0f\u5316",
+        "common.filter_placeholder": "\u30d5\u30a3\u30eb\u30bf\u30fc\u2026"
+    };
+    var m = (lng === "en") ? en : ja;
+    return m[key];
+}
+
 exports.t = function (key, opts) {
     if (window.i18next && typeof window.i18next.t === "function") {
+        if (window.i18next.isInitialized === false) {
+            var pb = preinitUiString(key);
+            return pb !== undefined ? pb : key;
+        }
         return window.i18next.t(key, opts);
     }
-    return key;
+    var pb2 = preinitUiString(key);
+    return pb2 !== undefined ? pb2 : key;
 };
 
 exports.changeLanguage = function (lng) {
