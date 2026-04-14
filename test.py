@@ -331,6 +331,8 @@ class TestJavaScriptFiles(unittest.TestCase):
             "一括登録がページ全選択チェックボックスを参照していません")
         self.assertIn("deviceTabulatorSelectedCount", main_ui,
             "デバイス一覧の選択件数ヘルパーがありません")
+        self.assertIn("pruneDeviceListWhitelistPickToTabulatorSelection", main_ui,
+            "部分選択と pick Map のズレを直す剪定ヘルパーがありません")
 
 
 class TestCSSFile(unittest.TestCase):

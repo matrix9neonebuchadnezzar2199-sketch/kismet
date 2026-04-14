@@ -1427,6 +1427,37 @@ function syncDeviceListWhitelistPickRow(row, selected) {
     }
 }
 
+/** Drop pick keys that are not in the current Tabulator row selection (fixes stale count after partial deselect). */
+function pruneDeviceListWhitelistPickToTabulatorSelection() {
+    if (!deviceTabulator) {
+        return;
+    }
+    var rows = deviceTabulator.getRows() || [];
+    var keep = new Set();
+    var i;
+    for (i = 0; i < rows.length; i++) {
+        try {
+            if (rows[i].isSelected()) {
+                var k = deviceListWhitelistPickKey(rows[i].getData());
+                if (k) {
+                    keep.add(k);
+                }
+            }
+        } catch (e0) {
+            /* ignore */
+        }
+    }
+    try {
+        deviceListWhitelistPick.forEach(function (v, k) {
+            if (!keep.has(k)) {
+                deviceListWhitelistPick.delete(k);
+            }
+        });
+    } catch (e1) {
+        /* ignore */
+    }
+}
+
 /** Forwards to kismet_whitelist_api debug when LS flag set (script order: api loads after this file; OK at click time). */
 function wlUiDbg(msg, detail) {
     try {
@@ -1490,6 +1521,10 @@ function gatherDeviceListWhitelistEntriesForBulk() {
     var sc = deviceTabulatorSelectedCount();
     var implicitAll = sc.total > 0 && sc.n === sc.total;
     var pageAll = (cb && cb.checked) || implicitAll;
+    if (deviceTabulator && !pageAll) {
+        pruneDeviceListWhitelistPickToTabulatorSelection();
+        updateDeviceListWlToolbar();
+    }
     var i;
     var rows = [];
     try {
