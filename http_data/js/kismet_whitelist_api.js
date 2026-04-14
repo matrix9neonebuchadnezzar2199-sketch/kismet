@@ -416,6 +416,7 @@ exports.exportToCSV = function () {
  * Whitelist / device-list bulk UI debug (console). Off by default.
  * Enable: localStorage.setItem("kismet.debug.whitelist_ui","1"); location.reload()
  * Disable: localStorage.removeItem("kismet.debug.whitelist_ui"); location.reload()
+ * Logs use console.debug so the default console level stays clean (enable Verbose in devtools to see).
  */
 var WL_UI_DBG_LS = "kismet.debug.whitelist_ui";
 
@@ -438,8 +439,8 @@ function whitelistUiDebugLog(msg, detail) {
                 tail = " [detail]";
             }
         }
-        if (typeof console !== "undefined" && console.warn) {
-            console.warn("ERR:" + msg + tail);
+        if (typeof console !== "undefined" && console.debug) {
+            console.debug("[whitelist-ui] " + msg + tail);
         }
     } catch (e) {
         /* ignore */

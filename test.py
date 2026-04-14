@@ -428,6 +428,10 @@ class TestWhitelistLogic(unittest.TestCase):
             "ホワイトリストUI用デバッグ用localStorageキーがありません")
         self.assertIn("debugWhitelistUiLog", content,
             "debugWhitelistUiLog が kismet_whitelist_api にありません")
+        self.assertIn('console.debug("[whitelist-ui] "', content,
+            "デバッグログは console.debug（ERR: の warn ではない）であること")
+        self.assertNotIn('console.warn("ERR:"', content,
+            "ERR: プレフィックスは誤解を招くため使わないこと")
 
     def test_whitelist_api_mac_validation(self):
         """MACアドレスのバリデーションがあるか"""
