@@ -58,11 +58,7 @@
     "export_csv_hint": "Save visible rows as UTF-8 CSV with BOM (RFC 4180). wireshark.display_filter is for 802.11 display filters; this file is not binary PCAPNG.",
     "csv_empty": "Nothing to export. Adjust filters or wait for data.",
     "wl_select_page": "Select all on this page",
-    "wl_bulk_done": "Whitelist: added {{added}}, skipped {{skipped}} (duplicate or invalid).",
-    "wl_add_one_hint": "Add this device to the whitelist",
-    "wl_add_one_btn": "+",
-    "wl_added_one_ok": "Added to whitelist.",
-    "wl_no_mac": "No MAC address for this row."
+    "wl_bulk_done": "Whitelist: added {{added}}, skipped {{skipped}} (duplicate or invalid)."
   },
   "rowhighlight": {
     "active_label": "Active",

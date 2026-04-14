@@ -58,11 +58,7 @@
     "export_csv_hint": "表示中の行を UTF-8（BOM付き）CSVで保存します。RFC 4180形式。wireshark.display_filter は802.11キャプチャ向け表示フィルタ用です（バイナリPCAPNGではありません）。",
     "csv_empty": "書き出す行がありません。フィルタを確認してください。",
     "wl_select_page": "このページを全選択",
-    "wl_bulk_done": "ホワイトリスト: 追加 {{added}} 件、スキップ {{skipped}} 件（重複または無効なMAC）。",
-    "wl_add_one_hint": "この端末をホワイトリストに追加",
-    "wl_add_one_btn": "+",
-    "wl_added_one_ok": "ホワイトリストに追加しました。",
-    "wl_no_mac": "この行にMACアドレスがありません。"
+    "wl_bulk_done": "ホワイトリスト: 追加 {{added}} 件、スキップ {{skipped}} 件（重複または無効なMAC）。"
   },
   "rowhighlight": {
     "active_label": "アクティブ",

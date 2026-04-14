@@ -1259,50 +1259,6 @@ function GenerateDeviceColumns2() {
 
     if (typeof kismet_whitelist_api !== "undefined") {
         columns.unshift({
-            field: "_wl_oneclick",
-            title: "",
-            width: 44,
-            frozen: true,
-            headerSort: false,
-            hozAlign: "center",
-            formatter: function () {
-                var hint = uiI18n("device_list.wl_add_one_hint", "Add this device to whitelist");
-                var btn = uiI18n("device_list.wl_add_one_btn", "+");
-                var esc = String(hint).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
-                return "<button type=\"button\" class=\"device-wl-add-one signal-filter-btn\" style=\"padding:2px 8px;min-width:32px\" title=\"" +
-                    esc + "\">" + btn + "</button>";
-            },
-            cellClick: function (e, cell) {
-                e.stopPropagation();
-                if (typeof kismet_whitelist_api === "undefined") {
-                    return;
-                }
-                var entry = deviceRowToWhitelistEntry(cell.getRow().getData());
-                if (!entry) {
-                    try {
-                        alert(uiI18n("device_list.wl_no_mac", "No MAC address for this row"));
-                    } catch (e2) {
-                        ;
-                    }
-                    return;
-                }
-                try {
-                    kismet_whitelist_api.addToWhitelist(entry);
-                    try {
-                        alert(uiI18n("device_list.wl_added_one_ok", "Added to whitelist"));
-                    } catch (e3) {
-                        ;
-                    }
-                } catch (err) {
-                    try {
-                        alert((err && err.message) ? err.message : String(err));
-                    } catch (e4) {
-                        ;
-                    }
-                }
-            }
-        });
-        columns.unshift({
             formatter: "rowSelection",
             titleFormatter: "rowSelection",
             hozAlign: "center",
@@ -2195,15 +2151,14 @@ exports.InitializeDeviceTable = function(element) {
     });
 
 
-    // Handle row clicks (ignore selection column, whitelist +, and packet sparkline cell —
+    // Handle row clicks (ignore selection column and packet sparkline cell —
     // rowClick on sparkline steals focus from jquery.sparkline hover tooltips / interaction)
     deviceTabulator.on("rowClick", (e, row) => {
         var t = e.target;
         if (t && t.closest) {
             if (t.closest(".tabulator-row-select-checkbox") ||
                 t.closest(".tabulator-row-header-select") ||
-                t.closest(".tabulator-row-header-select-checkbox") ||
-                t.closest(".device-wl-add-one")) {
+                t.closest(".tabulator-row-header-select-checkbox")) {
                 return;
             }
             var cellEl = t.closest(".tabulator-cell");
