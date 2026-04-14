@@ -76,12 +76,25 @@ function trySyncTags(entry) {
             var key = data[0]["kismet.device.base.key"];
             if (!key) return;
             var base = local_uri_prefix + "devices/by-key/" + encodeURIComponent(key) + "/set_tag.cmd";
-            $.post(base, JSON.stringify({ tagname: "whitelist", tagvalue: "approved" }));
+            function postTag(tagname, tagvalue) {
+                $.post(base, JSON.stringify({ tagname: tagname, tagvalue: tagvalue }))
+                    .fail(function (xhr) {
+                        if (typeof console !== "undefined" && console.warn) {
+                            console.warn("[whitelist] set_tag failed", tagname, xhr && xhr.status);
+                        }
+                    });
+            }
+            postTag("whitelist", "approved");
             if (entry.category) {
-                $.post(base, JSON.stringify({ tagname: "whitelist_category", tagvalue: entry.category }));
+                postTag("whitelist_category", entry.category);
             }
             if (entry.notes) {
-                $.post(base, JSON.stringify({ tagname: "whitelist_notes", tagvalue: entry.notes }));
+                postTag("whitelist_notes", entry.notes);
+            }
+        })
+        .fail(function (xhr) {
+            if (typeof console !== "undefined" && console.warn) {
+                console.warn("[whitelist] by-mac lookup failed", mac, xhr && xhr.status);
             }
         });
 }
@@ -124,14 +137,20 @@ exports.addToWhitelist = function (entry) {
 };
 
 exports.addBulkToWhitelist = function (entries) {
-    var n = 0;
+    var added = 0;
+    var skipped = [];
     for (var i = 0; i < entries.length; i++) {
         try {
             exports.addToWhitelist(entries[i]);
-            n++;
-        } catch (e) { /* skip */ }
+            added++;
+        } catch (e) {
+            skipped.push({
+                mac: entries[i] && entries[i].mac,
+                reason: String((e && e.message) ? e.message : e)
+            });
+        }
     }
-    return n;
+    return { added: added, skipped: skipped };
 };
 
 exports.updateWhitelistEntry = function (mac, updates) {
@@ -152,8 +171,9 @@ exports.updateWhitelistEntry = function (mac, updates) {
 
 exports.removeFromWhitelist = function (mac) {
     var m = normalizeMac(mac);
-    var list = loadStorage().filter(function (e) { return normalizeMac(e.mac) !== m; });
-    if (list.length === loadStorage().length) return false;
+    var before = loadStorage();
+    var list = before.filter(function (e) { return normalizeMac(e.mac) !== m; });
+    if (list.length === before.length) return false;
     saveStorage(list);
     return true;
 };

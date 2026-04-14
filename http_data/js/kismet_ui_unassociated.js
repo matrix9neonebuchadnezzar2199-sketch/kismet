@@ -533,14 +533,23 @@ function OpenUnassociatedPanel() {
             if (!sel.length) { alert(t("common.select_rows_first")); return; }
             if (!confirm(t("whitelist.confirm_bulk_register", { count: sel.length }))) return;
             if (typeof kismet_whitelist_api !== "undefined") {
-                kismet_whitelist_api.addBulkToWhitelist(sel.map(function (r) {
+                var odList = sel.map(function (r) {
+                    var od = r.original_data || {};
                     return {
                         mac: r.mac,
-                        name: r.manuf,
+                        name: (od["kismet.device.base.name"] || r.manuf || "").toString(),
                         category: "other",
-                        notes: "auto-registered"
+                        notes: "unassociated-panel"
                     };
-                }));
+                });
+                var res = kismet_whitelist_api.addBulkToWhitelist(odList);
+                var msg = (typeof kismet_i18n !== "undefined" && kismet_i18n.t) ?
+                    kismet_i18n.t("device_list.wl_bulk_done", {
+                        added: res.added,
+                        skipped: res.skipped.length
+                    }) :
+                    ("Added: " + res.added + ", skipped: " + res.skipped.length);
+                try { alert(msg); } catch (eAl) { }
             }
             refreshData();
         });

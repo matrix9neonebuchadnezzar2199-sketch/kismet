@@ -13,6 +13,20 @@
     margin-right: 8px;
 }
 
+#center-device-extras .device-list-wl-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-right: 8px;
+}
+
+#center-device-extras .device-list-wl-count {
+    font-size: 12px;
+    opacity: 0.9;
+    white-space: nowrap;
+}
+
 .signal-filter-bar {
     display: flex;
     flex-wrap: wrap;

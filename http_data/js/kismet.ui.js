@@ -1221,6 +1221,61 @@ function GenerateDeviceColumns2() {
         },
     });
 
+    if (typeof kismet_whitelist_api !== "undefined") {
+        columns.unshift({
+            field: "_wl_oneclick",
+            title: "",
+            width: 44,
+            frozen: true,
+            headerSort: false,
+            hozAlign: "center",
+            formatter: function () {
+                var hint = uiI18n("device_list.wl_add_one_hint", "Add this device to whitelist");
+                var btn = uiI18n("device_list.wl_add_one_btn", "+");
+                var esc = String(hint).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+                return "<button type=\"button\" class=\"device-wl-add-one signal-filter-btn\" style=\"padding:2px 8px;min-width:32px\" title=\"" +
+                    esc + "\">" + btn + "</button>";
+            },
+            cellClick: function (e, cell) {
+                e.stopPropagation();
+                if (typeof kismet_whitelist_api === "undefined") {
+                    return;
+                }
+                var entry = deviceRowToWhitelistEntry(cell.getRow().getData());
+                if (!entry) {
+                    try {
+                        alert(uiI18n("device_list.wl_no_mac", "No MAC address for this row"));
+                    } catch (e2) {
+                        ;
+                    }
+                    return;
+                }
+                try {
+                    kismet_whitelist_api.addToWhitelist(entry);
+                    try {
+                        alert(uiI18n("device_list.wl_added_one_ok", "Added to whitelist"));
+                    } catch (e3) {
+                        ;
+                    }
+                } catch (err) {
+                    try {
+                        alert((err && err.message) ? err.message : String(err));
+                    } catch (e4) {
+                        ;
+                    }
+                }
+            }
+        });
+        columns.unshift({
+            formatter: "rowSelection",
+            titleFormatter: "rowSelection",
+            hozAlign: "center",
+            headerSort: false,
+            frozen: true,
+            width: 40,
+            vertAlign: "middle"
+        });
+    }
 
     return columns;
 }
@@ -1255,6 +1310,11 @@ var deviceListKindFilter = 'all';
 
 /** Rows shown after optional client-side signal filter (current page). */
 var deviceTableRowsThisPage = 0;
+
+/** device_key -> whitelist entry fields; persists across auto-refresh of the device table */
+var deviceListWhitelistPick = new Map();
+
+var deviceListWlToolbarEventsBound = false;
 
 function deviceRowLastSignalDbm(row) {
     if (row['signal'] !== undefined && row['signal'] !== null && row['signal'] !== 0 && row['signal'] !== '0') {
@@ -1294,6 +1354,84 @@ function deviceRowMatchesKind(od, kind) {
         return false;
     }
     return true;
+}
+
+function deviceRowToWhitelistEntry(rowData) {
+    var od = rowData.original_data || {};
+    var mac = (od["kismet.device.base.macaddr"] || "").toString().trim();
+    if (!mac) {
+        return null;
+    }
+    return {
+        mac: mac,
+        name: (od["kismet.device.base.name"] || "").toString(),
+        category: "other",
+        notes: "device-list"
+    };
+}
+
+function syncDeviceListWhitelistPickRow(row, selected) {
+    var d = row.getData();
+    var key = d.device_key;
+    if (!key) {
+        return;
+    }
+    if (selected) {
+        var e = deviceRowToWhitelistEntry(d);
+        if (e && e.mac) {
+            deviceListWhitelistPick.set(key, e);
+        }
+    } else {
+        deviceListWhitelistPick.delete(key);
+    }
+}
+
+function updateDeviceListWlToolbar() {
+    var n = deviceListWhitelistPick.size;
+    var el = $("#device-list-wl-count");
+    if (el.length) {
+        el.text((typeof kismet_i18n !== "undefined" && kismet_i18n.t) ?
+            kismet_i18n.t("whitelist.selected_count", { count: n }) :
+            (String(n) + " selected"));
+    }
+}
+
+function updateDeviceListWlSelectAllCheckbox() {
+    var cb = document.getElementById("device-list-wl-sel-all");
+    if (!cb || !deviceTabulator) {
+        return;
+    }
+    var rows = deviceTabulator.getRows();
+    if (!rows.length) {
+        cb.checked = false;
+        cb.indeterminate = false;
+        return;
+    }
+    var n = 0;
+    rows.forEach(function (r) {
+        if (r.isSelected()) {
+            n++;
+        }
+    });
+    cb.checked = n === rows.length && n > 0;
+    cb.indeterminate = n > 0 && n < rows.length;
+}
+
+function restoreDeviceListWhitelistSelections() {
+    if (!deviceTabulator) {
+        return;
+    }
+    try {
+        deviceTabulator.getRows().forEach(function (r) {
+            var dk = r.getData().device_key;
+            if (dk && deviceListWhitelistPick.has(dk)) {
+                r.select();
+            }
+        });
+        updateDeviceListWlSelectAllCheckbox();
+    } catch (exWl) {
+        ;
+    }
 }
 
 function csvQuoteCell(val) {
@@ -1514,6 +1652,8 @@ function ScheduleDeviceSummary() {
 
                     // deviceTabulator.replaceData(data["data"]);
                     deviceTabulator.replaceData(procdata);
+                    restoreDeviceListWhitelistSelections();
+                    updateDeviceListWlToolbar();
 
                     var paginator = $('#devices-table2 .tabulator-paginator');
                     paginator.empty();
@@ -1761,6 +1901,97 @@ exports.InitializeDeviceTable = function(element) {
             menu.append(host);
         })(devviewmenu);
 
+        if (typeof kismet_whitelist_api !== 'undefined') {
+            var wlBar = $('<div>', {
+                class: 'device-list-wl-toolbar',
+                css: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginRight: '8px' }
+            });
+            wlBar.append($('<label>', {
+                css: { margin: 0, display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', cursor: 'pointer' }
+            })
+                .append($('<input>', { type: 'checkbox', id: 'device-list-wl-sel-all' }))
+                .append($('<span>').text(uiI18n('device_list.wl_select_page', 'Select all on this page'))));
+            wlBar.append($('<span>', { id: 'device-list-wl-count', class: 'device-list-wl-count' })
+                .text((typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ?
+                    kismet_i18n.t('whitelist.selected_count', { count: 0 }) : '0 selected'));
+            wlBar.append($('<button>', {
+                type: 'button',
+                class: 'signal-filter-btn device-list-wl-bulk-btn',
+                id: 'device-list-wl-bulk-btn'
+            }).text(uiI18n('whitelist.add_bulk', 'Register selected to whitelist')));
+            devviewmenu.append(wlBar);
+
+            if (!deviceListWlToolbarEventsBound) {
+                deviceListWlToolbarEventsBound = true;
+                $(document).on('change.kismetWlDev', '#device-list-wl-sel-all', function () {
+                    if (!deviceTabulator) {
+                        return;
+                    }
+                    if (this.checked) {
+                        deviceTabulator.selectRow();
+                    } else {
+                        deviceTabulator.deselectRow();
+                        deviceTabulator.getRows().forEach(function (r) {
+                            var dk = r.getData().device_key;
+                            if (dk) {
+                                deviceListWhitelistPick.delete(dk);
+                            }
+                        });
+                        updateDeviceListWlToolbar();
+                    }
+                    updateDeviceListWlSelectAllCheckbox();
+                });
+                $(document).on('click.kismetWlDev', '#device-list-wl-bulk-btn', function () {
+                    if (typeof kismet_whitelist_api === 'undefined' || !deviceTabulator) {
+                        return;
+                    }
+                    var entries = [];
+                    deviceListWhitelistPick.forEach(function (v) {
+                        entries.push(v);
+                    });
+                    if (entries.length === 0) {
+                        try {
+                            alert(uiI18n('common.select_rows_first', 'Select at least one row first'));
+                        } catch (e0) {
+                            ;
+                        }
+                        return;
+                    }
+                    var cmsg = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ?
+                        kismet_i18n.t('whitelist.confirm_bulk_register', { count: entries.length }) :
+                        ('Register ' + entries.length + ' device(s) to whitelist?');
+                    if (!window.confirm(cmsg)) {
+                        return;
+                    }
+                    var res = kismet_whitelist_api.addBulkToWhitelist(entries);
+                    deviceListWhitelistPick.clear();
+                    deviceTabulator.deselectRow();
+                    var cb = document.getElementById('device-list-wl-sel-all');
+                    if (cb) {
+                        cb.checked = false;
+                        cb.indeterminate = false;
+                    }
+                    updateDeviceListWlToolbar();
+                    var sum = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ?
+                        kismet_i18n.t('device_list.wl_bulk_done', {
+                            added: res.added,
+                            skipped: res.skipped.length
+                        }) :
+                        ('Added: ' + res.added + ', skipped: ' + res.skipped.length);
+                    try {
+                        alert(sum);
+                    } catch (e1) {
+                        ;
+                    }
+                    try {
+                        deviceTabulator.redraw(true);
+                    } catch (e2) {
+                        ;
+                    }
+                });
+            }
+        }
+
         devviewmenu.append(
             $('<button>', {
                 type: 'button',
@@ -1815,6 +2046,7 @@ exports.InitializeDeviceTable = function(element) {
         // layout: 'fitColumns',
 
         movableColumns: true,
+        selectableRows: true,
         columns: GenerateDeviceColumns2(),
 
         // No loading animation/text
@@ -1924,9 +2156,49 @@ exports.InitializeDeviceTable = function(element) {
     });
 
 
-    // Handle row clicks
+    // Handle row clicks (ignore selection column and per-row whitelist button)
     deviceTabulator.on("rowClick", (e, row) => {
+        var t = e.target;
+        if (t && t.closest) {
+            if (t.closest(".tabulator-row-select-checkbox") ||
+                t.closest(".tabulator-row-header-select") ||
+                t.closest(".tabulator-row-header-select-checkbox") ||
+                t.closest(".device-wl-add-one")) {
+                return;
+            }
+        }
         kismet_ui.DeviceDetailWindow(row.getData()['device_key']);
+    });
+
+    function deviceTabulatorRowArg(rowOrA, maybeB) {
+        var a = rowOrA;
+        var b = maybeB;
+        if (a && typeof a.getData === "function") {
+            return a;
+        }
+        if (b && typeof b.getData === "function") {
+            return b;
+        }
+        return null;
+    }
+
+    deviceTabulator.on("rowSelected", function (a, b) {
+        var row = deviceTabulatorRowArg(a, b);
+        if (!row) {
+            return;
+        }
+        syncDeviceListWhitelistPickRow(row, true);
+        updateDeviceListWlSelectAllCheckbox();
+        updateDeviceListWlToolbar();
+    });
+    deviceTabulator.on("rowDeselected", function (a, b) {
+        var row = deviceTabulatorRowArg(a, b);
+        if (!row) {
+            return;
+        }
+        syncDeviceListWhitelistPickRow(row, false);
+        updateDeviceListWlSelectAllCheckbox();
+        updateDeviceListWlToolbar();
     });
 
     deviceTabulator.on("columnMoved", function(column, columns){
@@ -1957,6 +2229,21 @@ exports.InitializeDeviceTable = function(element) {
     deviceTabulator.on("tableBuilt", function() {
         ScheduleDeviceSummary();
     });
+
+    if (!window.__kismetWlDeviceRedrawHook) {
+        window.__kismetWlDeviceRedrawHook = true;
+        document.addEventListener("kismet-whitelist-changed", function () {
+            try {
+                if (deviceTabulator && typeof deviceTabulator.redraw === "function") {
+                    deviceTabulator.redraw(true);
+                }
+            } catch (re) {
+                ;
+            }
+        });
+    }
+
+    updateDeviceListWlToolbar();
 }
 
 return exports;

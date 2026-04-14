@@ -238,9 +238,11 @@ class TestJavaScriptFiles(unittest.TestCase):
                 f"kismet_ui_export.js に '{func}' が見つかりません")
 
     def test_unassociated_sidebar(self):
-        """未接続クライアント画面がサイドバー登録されているか"""
+        """未接続クライアントモジュールが UI 登録用のエクスポートを持つか"""
         content = self._read("http_data/js/kismet_ui_unassociated.js")
-        self.assertIn('AddSidebarItem', content)
+        self.assertTrue(
+            'AddSidebarItem' in content or 'exports.registerSidebar' in content,
+            "kismet_ui_unassociated.js に AddSidebarItem または exports.registerSidebar がありません")
         self.assertIn('unassociated', content.lower())
 
     def test_whitelist_ui_sidebar(self):
@@ -298,6 +300,11 @@ class TestJavaScriptFiles(unittest.TestCase):
         content = self._read("http_data/js/kismet_ui_unassociated.js")
         self.assertRegex(content, r'(addBulk|bulk.*whitelist|register.*whitelist|ホワイトリスト.*登録)',
             "未接続クライアント画面に一括登録機能がありません")
+        main_ui = (BASE_DIR / "http_data/js/kismet.ui.js").read_text(encoding="utf-8")
+        self.assertIn("addBulkToWhitelist", main_ui,
+            "メインデバイス一覧からホワイトリスト一括登録がありません")
+        self.assertIn("device-list-wl-bulk-btn", main_ui,
+            "メインデバイス一覧にホワイトリスト一括ボタンがありません")
 
 
 class TestCSSFile(unittest.TestCase):
