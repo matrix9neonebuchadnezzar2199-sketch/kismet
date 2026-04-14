@@ -1364,9 +1364,25 @@ function deviceRowToWhitelistEntry(rowData) {
     };
 }
 
+/** Stable Map key for deviceListWhitelistPick (device_key, else mac: normalized). */
+function deviceListWhitelistPickKey(d) {
+    if (!d) {
+        return "";
+    }
+    if (d.device_key != null && String(d.device_key) !== "") {
+        return String(d.device_key);
+    }
+    var od = d.original_data || {};
+    var mac = (od["kismet.device.base.macaddr"] || "").toString().trim();
+    if (!mac) {
+        return "";
+    }
+    return "mac:" + mac.toUpperCase().replace(/-/g, ":");
+}
+
 function syncDeviceListWhitelistPickRow(row, selected) {
     var d = row.getData();
-    var key = d.device_key;
+    var key = deviceListWhitelistPickKey(d);
     if (!key) {
         return;
     }
@@ -1378,6 +1394,37 @@ function syncDeviceListWhitelistPickRow(row, selected) {
     } else {
         deviceListWhitelistPick.delete(key);
     }
+}
+
+/** Entries for bulk whitelist register: Map contents, or Tabulator selection if Map is empty. */
+function gatherDeviceListWhitelistEntriesForBulk() {
+    var entries = [];
+    deviceListWhitelistPick.forEach(function (v) {
+        entries.push(v);
+    });
+    if (entries.length || !deviceTabulator) {
+        return entries;
+    }
+    try {
+        deviceTabulator.getRows().forEach(function (r) {
+            if (!r.isSelected()) {
+                return;
+            }
+            var d = r.getData();
+            var e = deviceRowToWhitelistEntry(d);
+            if (!e || !e.mac) {
+                return;
+            }
+            var key = deviceListWhitelistPickKey(d);
+            if (key) {
+                deviceListWhitelistPick.set(key, e);
+            }
+            entries.push(e);
+        });
+    } catch (exGather) {
+        ;
+    }
+    return entries;
 }
 
 function updateDeviceListWlToolbar() {
@@ -1417,7 +1464,7 @@ function restoreDeviceListWhitelistSelections() {
     }
     try {
         deviceTabulator.getRows().forEach(function (r) {
-            var dk = r.getData().device_key;
+            var dk = deviceListWhitelistPickKey(r.getData());
             if (dk && deviceListWhitelistPick.has(dk)) {
                 r.select();
             }
@@ -1923,26 +1970,30 @@ exports.InitializeDeviceTable = function(element) {
                     }
                     if (this.checked) {
                         deviceTabulator.selectRow();
+                        deviceTabulator.getRows().forEach(function (r) {
+                            syncDeviceListWhitelistPickRow(r, true);
+                        });
+                        updateDeviceListWlToolbar();
+                        setTimeout(function () {
+                            updateDeviceListWlSelectAllCheckbox();
+                        }, 0);
                     } else {
                         deviceTabulator.deselectRow();
                         deviceTabulator.getRows().forEach(function (r) {
-                            var dk = r.getData().device_key;
+                            var dk = deviceListWhitelistPickKey(r.getData());
                             if (dk) {
                                 deviceListWhitelistPick.delete(dk);
                             }
                         });
                         updateDeviceListWlToolbar();
+                        updateDeviceListWlSelectAllCheckbox();
                     }
-                    updateDeviceListWlSelectAllCheckbox();
                 });
                 $(document).on('click.kismetWlDev', '#device-list-wl-bulk-btn', function () {
                     if (typeof kismet_whitelist_api === 'undefined' || !deviceTabulator) {
                         return;
                     }
-                    var entries = [];
-                    deviceListWhitelistPick.forEach(function (v) {
-                        entries.push(v);
-                    });
+                    var entries = gatherDeviceListWhitelistEntriesForBulk();
                     if (entries.length === 0) {
                         try {
                             alert(uiI18n('common.select_rows_first', 'Select at least one row first'));
