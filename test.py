@@ -420,6 +420,10 @@ class TestWhitelistLogic(unittest.TestCase):
             content = f.read()
         self.assertRegex(content, r'kismet\.whitelist',
             "localStorageキー 'kismet.whitelist' が見つかりません")
+        self.assertIn("kismet.debug.whitelist_ui", content,
+            "ホワイトリストUI用デバッグ用localStorageキーがありません")
+        self.assertIn("debugWhitelistUiLog", content,
+            "debugWhitelistUiLog が kismet_whitelist_api にありません")
 
     def test_whitelist_api_mac_validation(self):
         """MACアドレスのバリデーションがあるか"""

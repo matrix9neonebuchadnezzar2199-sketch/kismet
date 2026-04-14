@@ -399,6 +399,46 @@ exports.exportToCSV = function () {
     return BOM + lines.join("\r\n");
 };
 
+/**
+ * Whitelist / device-list bulk UI debug (console). Off by default.
+ * Enable: localStorage.setItem("kismet.debug.whitelist_ui","1"); location.reload()
+ * Disable: localStorage.removeItem("kismet.debug.whitelist_ui"); location.reload()
+ */
+var WL_UI_DBG_LS = "kismet.debug.whitelist_ui";
+
+function whitelistUiDebugLog(msg, detail) {
+    try {
+        if (typeof localStorage === "undefined" || localStorage.getItem(WL_UI_DBG_LS) !== "1") {
+            return;
+        }
+        var tail = "";
+        if (arguments.length > 1) {
+            try {
+                if (detail === null || detail === undefined) {
+                    tail = "";
+                } else if (typeof detail === "object") {
+                    tail = " " + JSON.stringify(detail);
+                } else {
+                    tail = " " + String(detail);
+                }
+            } catch (eJ) {
+                tail = " [detail]";
+            }
+        }
+        if (typeof console !== "undefined" && console.warn) {
+            console.warn("ERR:" + msg + tail);
+        }
+    } catch (e) {
+        /* ignore */
+    }
+}
+
+exports.debugWhitelistUiLog = whitelistUiDebugLog;
+(function exposeDbg(g) {
+    if (!g) return;
+    g.kismetWhitelistUiDebugLog = whitelistUiDebugLog;
+})(typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : null));
+
 return exports;
 
 }));

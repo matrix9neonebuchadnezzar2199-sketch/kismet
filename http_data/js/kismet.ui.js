@@ -1402,6 +1402,18 @@ function syncDeviceListWhitelistPickRow(row, selected) {
     }
 }
 
+/** Forwards to kismet_whitelist_api debug when LS flag set (script order: api loads after this file; OK at click time). */
+function wlUiDbg(msg, detail) {
+    try {
+        var g = typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : null);
+        if (g && typeof g.kismetWhitelistUiDebugLog === "function") {
+            g.kismetWhitelistUiDebugLog(msg, detail);
+        }
+    } catch (e) {
+        /* ignore */
+    }
+}
+
 function deviceTabulatorSelectedCount() {
     if (!deviceTabulator) {
         return { n: 0, total: 0 };
@@ -1446,6 +1458,7 @@ function gatherDeviceListWhitelistEntriesForBulk() {
         deviceListWhitelistPick.forEach(function (v) {
             pushEntry(v);
         });
+        wlUiDbg("device_gather_no_tabulator", { entries: entries.length });
         return entries;
     }
     var cb = document.getElementById("device-list-wl-sel-all");
@@ -1501,6 +1514,32 @@ function gatherDeviceListWhitelistEntriesForBulk() {
             pushEntry(v);
         });
     }
+    var gdLen = -1;
+    try {
+        if (typeof deviceTabulator.getData === "function") {
+            var gd = deviceTabulator.getData();
+            gdLen = gd ? gd.length : 0;
+        }
+    } catch (eGd) {
+        gdLen = -1;
+    }
+    var pickSz = -1;
+    try {
+        pickSz = deviceListWhitelistPick.size;
+    } catch (ePs) {
+        pickSz = -1;
+    }
+    wlUiDbg("device_gather", {
+        entries: entries.length,
+        pickSize: pickSz,
+        pageAll: pageAll,
+        implicitAll: implicitAll,
+        nSel: sc.n,
+        rowTotal: sc.total,
+        getRows: rows.length,
+        getDataLen: gdLen,
+        cbChecked: !!(cb && cb.checked)
+    });
     return entries;
 }
 
@@ -2043,8 +2082,16 @@ exports.InitializeDeviceTable = function(element) {
                 deviceListWlToolbarEventsBound = true;
                 $(document).on('change.kismetWlDev', '#device-list-wl-sel-all', function () {
                     if (!deviceTabulator) {
+                        wlUiDbg("device_selall_change_no_tabulator", {});
                         return;
                     }
+                    var nRows = 0;
+                    try {
+                        nRows = deviceTabulator.getRows().length;
+                    } catch (eNr) {
+                        nRows = -1;
+                    }
+                    wlUiDbg("device_selall_change", { checked: !!this.checked, getRows: nRows, pickBefore: deviceListWhitelistPick.size });
                     if (this.checked) {
                         deviceTabulator.deselectRow();
                         deviceListWhitelistPick.clear();
@@ -2059,6 +2106,7 @@ exports.InitializeDeviceTable = function(element) {
                         updateDeviceListWlToolbar();
                         setTimeout(function () {
                             updateDeviceListWlSelectAllCheckbox();
+                            wlUiDbg("device_selall_after_timeout", { pick: deviceListWhitelistPick.size });
                         }, 0);
                     } else {
                         deviceTabulator.deselectRow();
@@ -2069,9 +2117,12 @@ exports.InitializeDeviceTable = function(element) {
                 });
                 $(document).on('click.kismetWlDev', '#device-list-wl-bulk-btn', function () {
                     if (typeof kismet_whitelist_api === 'undefined' || !deviceTabulator) {
+                        wlUiDbg("device_bulk_click_skip", { api: typeof kismet_whitelist_api, tab: !!deviceTabulator });
                         return;
                     }
+                    wlUiDbg("device_bulk_click_start", {});
                     var entries = gatherDeviceListWhitelistEntriesForBulk();
+                    wlUiDbg("device_bulk_after_gather", { entries: entries.length });
                     if (entries.length === 0) {
                         try {
                             alert(uiI18n('common.select_rows_first', 'Select at least one row first'));
@@ -2084,11 +2135,13 @@ exports.InitializeDeviceTable = function(element) {
                         kismet_i18n.t('whitelist.confirm_bulk_register', { count: entries.length }) :
                         ('Register ' + entries.length + ' device(s) to whitelist?');
                     if (!window.confirm(cmsg)) {
+                        wlUiDbg("device_bulk_confirm_cancelled", {});
                         return;
                     }
                     var res;
                     try {
                         res = kismet_whitelist_api.addBulkToWhitelist(entries);
+                        wlUiDbg("device_bulk_done", { added: res.added, skipped: res.skipped ? res.skipped.length : 0 });
                     } catch (eBulk) {
                         try {
                             alert(String((eBulk && eBulk.message) ? eBulk.message : eBulk) ||
@@ -2176,6 +2229,7 @@ exports.InitializeDeviceTable = function(element) {
     }
 
     if (deviceTabulator) {
+        wlUiDbg("device_init_skip_new_tabulator", {});
         try {
             ScheduleDeviceSummary();
         } catch (eSch) {

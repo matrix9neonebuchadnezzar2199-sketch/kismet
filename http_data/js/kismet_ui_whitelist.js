@@ -22,6 +22,17 @@ var tabulator = null;
 var whitelistPanelWrap = null;
 var WHITELIST_JSPANEL_REF = "__kismetWhitelistJspanel";
 
+function wlUiDbg(msg, detail) {
+    try {
+        var g = typeof globalThis !== "undefined" ? globalThis : (typeof window !== "undefined" ? window : null);
+        if (g && typeof g.kismetWhitelistUiDebugLog === "function") {
+            g.kismetWhitelistUiDebugLog(msg, detail);
+        }
+    } catch (e) {
+        /* ignore */
+    }
+}
+
 function closeWhitelistPanelIfOpen() {
     if (typeof window === "undefined") {
         return;
@@ -189,6 +200,14 @@ function collectWlBulkDeleteMacs() {
         pushMacDedup(seen, macs, row && row.mac);
     });
 
+    wlUiDbg("wl_collect_delete", {
+        macs: macs.length,
+        pageAll: pageAll,
+        implicitAll: implicitAll,
+        nSel: st.n,
+        rowTotal: st.total,
+        getRows: rows.length
+    });
     return macs;
 }
 
@@ -341,12 +360,18 @@ function OpenWhitelistPanel() {
         type: "button",
         class: "btn js-wl-delete-selected"
     }).text(t("whitelist.delete_selected")).prop("disabled", true).on("click", function () {
-        if (!confirm(t("whitelist.confirm_delete"))) return;
+        wlUiDbg("wl_bulk_delete_click", {});
+        if (!confirm(t("whitelist.confirm_delete"))) {
+            wlUiDbg("wl_bulk_delete_confirm_cancel", {});
+            return;
+        }
         if (!tabulator) {
+            wlUiDbg("wl_bulk_delete_no_tabulator", {});
             alert(t("common.error"));
             return;
         }
         var macs = collectWlBulkDeleteMacs();
+        wlUiDbg("wl_bulk_delete_macs", { count: macs.length });
         if (!macs.length) {
             alert(t("common.select_rows_first"));
             return;
@@ -385,7 +410,17 @@ function OpenWhitelistPanel() {
     });
 
     wrap.on("change", ".js-wl-sel-all", function () {
-        if (!tabulator) return;
+        if (!tabulator) {
+            wlUiDbg("wl_selall_no_tabulator", {});
+            return;
+        }
+        var nR = 0;
+        try {
+            nR = tabulator.getRows().length;
+        } catch (eNr) {
+            nR = -1;
+        }
+        wlUiDbg("wl_selall_change", { on: !!$(this).prop("checked"), getRows: nR });
         var on = $(this).prop("checked");
         if (on) {
             tabulator.deselectRow();
