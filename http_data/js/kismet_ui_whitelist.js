@@ -62,32 +62,51 @@ function getWlSelectedRowDatas() {
     return [];
 }
 
-/** MACs for bulk delete: prefer row objects; fallback scan if Tabulator data API is empty. */
+/** Selection count aligned with Tabulator row state (not only getSelected* APIs). */
+function countWlSelectedRows() {
+    if (!tabulator) return 0;
+    var n = 0;
+    try {
+        tabulator.getRows().forEach(function (r) {
+            if (r.isSelected()) {
+                n++;
+            }
+        });
+    } catch (eCnt) {
+        /* ignore */
+    }
+    return n;
+}
+
+function pushMacDedup(seen, macs, m) {
+    var s = String(m || "").trim();
+    if (!s) return;
+    var u = s.toUpperCase().replace(/-/g, ":");
+    if (!seen[u]) {
+        seen[u] = 1;
+        macs.push(s);
+    }
+}
+
+/** MACs for bulk delete: scan isSelected() first (matches UI); then getSelected* APIs. */
 function collectWlBulkDeleteMacs() {
     var seen = {};
     var macs = [];
-    function pushMac(m) {
-        var s = String(m || "").trim();
-        if (!s) return;
-        var u = s.toUpperCase().replace(/-/g, ":");
-        if (!seen[u]) {
-            seen[u] = 1;
-            macs.push(s);
-        }
-    }
-    getWlSelectedRowDatas().forEach(function (row) {
-        pushMac(row && row.mac);
-    });
-    if (!macs.length && tabulator) {
+    if (tabulator) {
         try {
             tabulator.getRows().forEach(function (r) {
                 if (r.isSelected()) {
-                    pushMac(r.getData().mac);
+                    pushMacDedup(seen, macs, r.getData().mac);
                 }
             });
         } catch (eScan) {
             /* ignore */
         }
+    }
+    if (!macs.length) {
+        getWlSelectedRowDatas().forEach(function (row) {
+            pushMacDedup(seen, macs, row && row.mac);
+        });
     }
     return macs;
 }
@@ -153,9 +172,17 @@ function validateMac(m) {
 
 function updateWlBulkSelectionUi() {
     if (!whitelistPanelWrap || !whitelistPanelWrap.length) return;
-    var n = getWlSelectedRowDatas().length;
+    var n = countWlSelectedRows();
     whitelistPanelWrap.find(".js-wl-selected-count").text(t("whitelist.selected_count", { count: n }));
-    whitelistPanelWrap.find(".js-wl-delete-selected").prop("disabled", n === 0);
+    var nRows = 0;
+    if (tabulator) {
+        try {
+            nRows = tabulator.getRows().length;
+        } catch (eNr) {
+            nRows = 0;
+        }
+    }
+    whitelistPanelWrap.find(".js-wl-delete-selected").prop("disabled", nRows === 0);
     var cb = whitelistPanelWrap.find(".js-wl-sel-all")[0];
     if (!cb || !tabulator) return;
     var rows = tabulator.getRows();
@@ -234,14 +261,21 @@ function OpenWhitelistPanel() {
         class: "btn js-wl-delete-selected"
     }).text(t("whitelist.delete_selected")).prop("disabled", true).on("click", function () {
         if (!confirm(t("whitelist.confirm_delete"))) return;
-        if (!tabulator) return;
+        if (!tabulator) {
+            alert(t("common.error"));
+            return;
+        }
         var macs = collectWlBulkDeleteMacs();
         if (!macs.length) {
             alert(t("common.select_rows_first"));
             return;
         }
-        kismet_whitelist_api.removeBulkFromWhitelist(macs);
-        refreshTable();
+        try {
+            kismet_whitelist_api.removeBulkFromWhitelist(macs);
+            refreshTable();
+        } catch (eDel) {
+            alert(String((eDel && eDel.message) ? eDel.message : eDel) || t("common.error"));
+        }
     }));
     wrap.append(bulk);
 
