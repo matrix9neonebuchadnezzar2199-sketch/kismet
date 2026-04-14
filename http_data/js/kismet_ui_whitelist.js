@@ -40,23 +40,56 @@ function closeWhitelistPanelIfOpen() {
 function getWlSelectedRowDatas() {
     if (!tabulator) return [];
     try {
+        if (typeof tabulator.getSelectedRows === "function") {
+            var rw = tabulator.getSelectedRows();
+            if (rw && rw.length) {
+                return rw.map(function (r) {
+                    return r.getData();
+                });
+            }
+        }
+    } catch (eRows) {
+        /* ignore */
+    }
+    try {
         if (typeof tabulator.getSelectedData === "function") {
             var d = tabulator.getSelectedData();
             if (d && d.length) return d;
         }
-    } catch (e1) {
-        /* ignore */
-    }
-    try {
-        if (typeof tabulator.getSelectedRows === "function") {
-            return tabulator.getSelectedRows().map(function (r) {
-                return r.getData();
-            });
-        }
-    } catch (e2) {
+    } catch (eData) {
         /* ignore */
     }
     return [];
+}
+
+/** MACs for bulk delete: prefer row objects; fallback scan if Tabulator data API is empty. */
+function collectWlBulkDeleteMacs() {
+    var seen = {};
+    var macs = [];
+    function pushMac(m) {
+        var s = String(m || "").trim();
+        if (!s) return;
+        var u = s.toUpperCase().replace(/-/g, ":");
+        if (!seen[u]) {
+            seen[u] = 1;
+            macs.push(s);
+        }
+    }
+    getWlSelectedRowDatas().forEach(function (row) {
+        pushMac(row && row.mac);
+    });
+    if (!macs.length && tabulator) {
+        try {
+            tabulator.getRows().forEach(function (r) {
+                if (r.isSelected()) {
+                    pushMac(r.getData().mac);
+                }
+            });
+        } catch (eScan) {
+            /* ignore */
+        }
+    }
+    return macs;
 }
 
 function categoryOptions() {
@@ -202,13 +235,9 @@ function OpenWhitelistPanel() {
     }).text(t("whitelist.delete_selected")).prop("disabled", true).on("click", function () {
         if (!confirm(t("whitelist.confirm_delete"))) return;
         if (!tabulator) return;
-        var datas = getWlSelectedRowDatas();
-        var macs = datas.map(function (r) {
-            return r && r.mac;
-        }).filter(function (m) {
-            return m && String(m).trim();
-        });
+        var macs = collectWlBulkDeleteMacs();
         if (!macs.length) {
+            alert(t("common.select_rows_first"));
             return;
         }
         kismet_whitelist_api.removeBulkFromWhitelist(macs);
