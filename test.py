@@ -256,6 +256,8 @@ class TestJavaScriptFiles(unittest.TestCase):
         self.assertIn('whitelist', content.lower())
         self.assertIn("root.kismet_ui_whitelist_module", content,
             "AMD 環境でもグローバルに登録し registerSidebar が動くこと")
+        self.assertIn("rowSelection", content,
+            "ホワイトリスト表に行チェックボックス列があること")
 
     def test_enhanced_device_column(self):
         """メインUIにホワイトリスト列が追加されているか"""
@@ -353,7 +355,7 @@ class TestCSSFile(unittest.TestCase):
         """ホワイトリストのCSSが定義されているか"""
         content = self._read()
         for cls in ['.whitelist-toolbar', '.whitelist-approved', '.whitelist-unknown',
-                    '.device-name-wl-safe', '.kismet-row-whitelist-trusted']:
+                    '.whitelist-bulk-toolbar', '.device-name-wl-safe', '.kismet-row-whitelist-trusted']:
             self.assertIn(cls, content,
                 f"CSSに '{cls}' が定義されていません")
 

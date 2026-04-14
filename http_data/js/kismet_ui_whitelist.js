@@ -78,9 +78,37 @@ function validateMac(m) {
     return /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(x);
 }
 
+function updateWlBulkSelectionUi() {
+    var n = tabulator ? tabulator.getSelectedData().length : 0;
+    var lbl = $("#wl-selected-label");
+    if (lbl.length) {
+        lbl.text(t("whitelist.selected_count", { count: n }));
+    }
+    $("#wl-delete-selected-btn").prop("disabled", n === 0);
+    var cb = document.getElementById("wl-sel-all-page");
+    if (!cb || !tabulator) return;
+    var rows = tabulator.getRows();
+    if (!rows.length) {
+        cb.checked = false;
+        cb.indeterminate = false;
+        return;
+    }
+    var sel = 0;
+    for (var i = 0; i < rows.length; i++) {
+        if (rows[i].isSelected()) sel++;
+    }
+    cb.checked = sel === rows.length && sel > 0;
+    cb.indeterminate = sel > 0 && sel < rows.length;
+}
+
 function refreshTable() {
     if (!tabulator) return;
-    tabulator.replaceData(kismet_whitelist_api.getWhitelist());
+    var p = tabulator.replaceData(kismet_whitelist_api.getWhitelist());
+    if (p && typeof p.then === "function") {
+        p.then(function () { updateWlBulkSelectionUi(); });
+    } else {
+        updateWlBulkSelectionUi();
+    }
 }
 
 function OpenWhitelistPanel() {
@@ -117,9 +145,17 @@ function OpenWhitelistPanel() {
     var tableHost = $("<div>", { id: "whitelist-table-host" });
     wrap.append(tableHost);
 
-    var bulk = $("<div>", { class: "whitelist-toolbar" });
-    bulk.append($("<span>", { id: "wl-selected-label" }).text(t("whitelist.selected_count", { count: 0 })));
-    bulk.append($("<button>", { type: "button", class: "btn" }).text(t("whitelist.delete_selected")).prop("disabled", true).on("click", function () {
+    var bulk = $("<div>", { class: "whitelist-toolbar whitelist-bulk-toolbar" });
+    bulk.append($("<label>", { class: "whitelist-sel-all-wrap" }).append(
+        $("<input>", { type: "checkbox", id: "wl-sel-all-page" })
+    ).append($("<span>").text(" " + t("whitelist.select_all"))));
+    bulk.append($("<span>", { id: "wl-selected-label", class: "wl-selected-count" })
+        .text(t("whitelist.selected_count", { count: 0 })));
+    bulk.append($("<button>", {
+        type: "button",
+        class: "btn",
+        id: "wl-delete-selected-btn"
+    }).text(t("whitelist.delete_selected")).prop("disabled", true).on("click", function () {
         if (!confirm(t("whitelist.confirm_delete"))) return;
         var rows = tabulator.getSelectedData();
         var macs = rows.map(function (r) { return r.mac; });
@@ -159,8 +195,17 @@ function OpenWhitelistPanel() {
             tabulator = new Tabulator("#whitelist-table-host", {
                 data: kismet_whitelist_api.getWhitelist(),
                 layout: "fitColumns",
-                selectable: true,
+                selectableRows: true,
                 columns: [
+                    {
+                        formatter: "rowSelection",
+                        titleFormatter: "rowSelection",
+                        hozAlign: "center",
+                        headerSort: false,
+                        frozen: true,
+                        width: 40,
+                        vertAlign: "middle"
+                    },
                     { field: "mac", title: t("whitelist.mac_address"), headerSort: true },
                     { field: "name", title: t("whitelist.device_name") },
                     { field: "category", title: t("whitelist.category") },
@@ -179,7 +224,7 @@ function OpenWhitelistPanel() {
                     {
                         title: t("whitelist.delete"),
                         formatter: function () {
-                            return "<button class='btn'>" + t("whitelist.delete") + "</button>";
+                            return "<button type=\"button\" class=\"btn wl-row-delete-btn\">" + t("whitelist.delete") + "</button>";
                         },
                         cellClick: function (e, cell) {
                             e.stopPropagation();
@@ -191,13 +236,17 @@ function OpenWhitelistPanel() {
                     }
                 ]
             });
-            function syncSel() {
-                var n = tabulator.getSelectedData().length;
-                $("#wl-selected-label").text(t("whitelist.selected_count", { count: n }));
-                bulk.find("button").prop("disabled", n === 0);
-            }
-            tabulator.on("rowSelected", syncSel);
-            tabulator.on("rowDeselected", syncSel);
+            $(document).off("change.wlSelAll", "#wl-sel-all-page").on("change.wlSelAll", "#wl-sel-all-page", function () {
+                if (!tabulator) return;
+                var on = $(this).prop("checked");
+                tabulator.getRows().forEach(function (r) {
+                    if (on) r.select(); else r.deselect();
+                });
+                updateWlBulkSelectionUi();
+            });
+            tabulator.on("rowSelected", updateWlBulkSelectionUi);
+            tabulator.on("rowDeselected", updateWlBulkSelectionUi);
+            tabulator.on("tableBuilt", updateWlBulkSelectionUi);
         }
     });
 }
