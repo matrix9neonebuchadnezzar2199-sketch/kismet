@@ -1068,9 +1068,25 @@ function GenerateDeviceTabulatorColumn(c) {
     var col = {
         'field': c['kismetId'],
         'title': resolvedTitle,
-        'formatter': (cell, params, onrender) => {
+        'formatter': (cell, formatterParams, onRendered) => {
+            var runWhenCellInDom = function (cb) {
+                if (typeof cb !== "function") {
+                    return;
+                }
+                if (typeof onRendered === "function") {
+                    onRendered(cb);
+                } else {
+                    setTimeout(function () {
+                        try {
+                            cb();
+                        } catch (e2) {
+                            ;
+                        }
+                    }, 0);
+                }
+            };
             try {
-                return c['render'](cell.getValue(), cell.getRow().getData(), cell, onrender, c['auxdata']);
+                return c['render'](cell.getValue(), cell.getRow().getData(), cell, runWhenCellInDom, c['auxdata']);
             } catch (e) {
                 return cell.getValue();
             }
@@ -2159,7 +2175,8 @@ exports.InitializeDeviceTable = function(element) {
     });
 
 
-    // Handle row clicks (ignore selection column and per-row whitelist button)
+    // Handle row clicks (ignore selection column, whitelist +, and packet sparkline cell —
+    // rowClick on sparkline steals focus from jquery.sparkline hover tooltips / interaction)
     deviceTabulator.on("rowClick", (e, row) => {
         var t = e.target;
         if (t && t.closest) {
@@ -2168,6 +2185,13 @@ exports.InitializeDeviceTable = function(element) {
                 t.closest(".tabulator-row-header-select-checkbox") ||
                 t.closest(".device-wl-add-one")) {
                 return;
+            }
+            var cellEl = t.closest(".tabulator-cell");
+            if (cellEl) {
+                var fld = cellEl.getAttribute("tabulator-field");
+                if (fld === "packet_rrd") {
+                    return;
+                }
             }
         }
         kismet_ui.DeviceDetailWindow(row.getData()['device_key']);

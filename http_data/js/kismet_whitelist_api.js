@@ -1,8 +1,13 @@
-(
-    typeof define === "function" ? function (m) { define("kismet-whitelist-api-js", m); } :
-    typeof exports === "object" ? function (m) { module.exports = m(); } :
-    function (m) { this.kismet_whitelist_api = m(); }
-)(function () {
+(function (root, factory) {
+    var api = factory();
+    if (typeof define === "function" && define.amd) {
+        define("kismet-whitelist-api-js", [], function () { return api; });
+    }
+    if (typeof module === "object" && module.exports) {
+        module.exports = api;
+    }
+    root.kismet_whitelist_api = api;
+}(typeof globalThis !== "undefined" ? globalThis : this, function () {
 
 "use strict";
 
@@ -268,4 +273,4 @@ exports.exportToCSV = function () {
 
 return exports;
 
-});
+}));

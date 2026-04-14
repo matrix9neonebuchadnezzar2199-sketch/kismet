@@ -423,6 +423,18 @@ function OpenUnassociatedPanel() {
 
     var tableId = tableDiv.attr("id");
     setTimeout(function() {
+        function openUnassocSignalMonitorRow(row) {
+            if (!row || typeof kismet_ui_signal_monitor === "undefined") {
+                return;
+            }
+            var d = row.getData();
+            kismet_ui_signal_monitor.OpenSignalMonitor(
+                d.device_key, d.mac,
+                (d.original_data && d.original_data["kismet.device.base.name"]) || "",
+                d.manuf
+            );
+        }
+
         if (typeof Tabulator !== "undefined") {
             unassocTable = new Tabulator("#" + tableId, {
                 layout: "fitColumns",
@@ -466,11 +478,7 @@ function OpenUnassociatedPanel() {
                             var d = cell.getRow().getData();
                             console.log("[unassociated] monitor button clicked:", d.mac);
                             if (typeof kismet_ui_signal_monitor !== "undefined") {
-                                kismet_ui_signal_monitor.OpenSignalMonitor(
-                                    d.device_key, d.mac,
-                                    (d.original_data && d.original_data["kismet.device.base.name"]) || "",
-                                    d.manuf
-                                );
+                                openUnassocSignalMonitorRow(cell.getRow());
                             } else {
                                 console.error("[unassociated] kismet_ui_signal_monitor not available");
                             }
@@ -478,7 +486,24 @@ function OpenUnassociatedPanel() {
                     }
                 ]
             });
-            // rowClick not used: Kismet's device list click opens Device Info; use monitor column instead.
+            // Tabulator 5: rowClick on constructor is unreliable; bind here (see 2026-04-13開発LOG.md §4).
+            unassocTable.on("rowClick", function (e, row) {
+                var t = e.target;
+                if (t && t.closest) {
+                    if (t.closest(".btn-monitor") ||
+                        t.closest("input[type='checkbox']") ||
+                        t.closest(".tabulator-row-select-checkbox") ||
+                        t.closest(".tabulator-row-header-select") ||
+                        t.closest(".tabulator-row-header-select-checkbox")) {
+                        return;
+                    }
+                }
+                if (typeof kismet_ui_signal_monitor === "undefined") {
+                    console.error("[unassociated] kismet_ui_signal_monitor not available");
+                    return;
+                }
+                openUnassocSignalMonitorRow(row);
+            });
         } else {
             console.warn("[unassociated] Tabulator not found, using HTML table");
             var ht = $("<table>", {

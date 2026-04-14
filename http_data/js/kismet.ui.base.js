@@ -253,7 +253,11 @@ kismet_ui.AddDeviceColumn("signal", {
     'render': (data, row, cell, onrender, aux) => {
         if (data == 0)
             return "<i>n/a</i>"
-        return data;
+        var label = (typeof kismet_i18n !== "undefined" && kismet_i18n.t) ?
+            kismet_i18n.t("device_list.signal_hover", { value: String(data) }) :
+            ("Last signal: " + String(data));
+        var hintEsc = String(label).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+        return '<span class="kismet-signal-cell" title="' + hintEsc + '">' + data + '</span>';
     },
 });
 

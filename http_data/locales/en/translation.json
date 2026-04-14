@@ -23,6 +23,7 @@
     "type": "Type",
     "phy": "PHY Type",
     "signal": "Signal",
+    "signal_hover": "Last signal: {{value}}",
     "channel": "Channel",
     "last_seen": "Last Seen",
     "first_seen": "First Seen",

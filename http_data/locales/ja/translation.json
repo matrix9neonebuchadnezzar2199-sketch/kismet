@@ -23,6 +23,7 @@
     "type": "種別",
     "phy": "PHY種別",
     "signal": "電波強度",
+    "signal_hover": "最終信号強度: {{value}}",
     "channel": "チャンネル",
     "last_seen": "最終検出",
     "first_seen": "初回検出",
