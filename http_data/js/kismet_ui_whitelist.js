@@ -407,7 +407,8 @@ function OpenWhitelistPanel() {
         var term = $(this).val().toLowerCase();
         tabulator.setFilter(function (data) {
             if (!term) return true;
-            return String(data.mac + data.name + data.category + data.notes).toLowerCase().indexOf(term) >= 0;
+            return String(data.mac + data.name + data.category + data.notes + (data.last_seen_unix || ""))
+                .toLowerCase().indexOf(term) >= 0;
         });
     });
     toolbar.append(search);
@@ -560,9 +561,28 @@ function OpenWhitelistPanel() {
                         width: 40,
                         vertAlign: "middle"
                     },
-                    { field: "mac", title: t("whitelist.mac_address"), headerSort: true },
-                    { field: "name", title: t("whitelist.device_name") },
-                    { field: "category", title: t("whitelist.category") },
+                    { field: "mac", title: t("device_list.mac_address"), headerSort: true },
+                    { field: "name", title: t("device_list.name") },
+                    { field: "category", title: t("device_list.manufacturer") },
+                    {
+                        field: "last_seen_unix",
+                        title: t("device_list.last_seen"),
+                        formatter: function (cell) {
+                            var v = cell.getValue();
+                            if (v == null || String(v).trim() === "") {
+                                return "";
+                            }
+                            var n = parseFloat(String(v));
+                            if (!isNaN(n) && n > 1e6) {
+                                try {
+                                    return (new Date(n * 1000)).toISOString().replace("T", " ").slice(0, 19);
+                                } catch (ex) {
+                                    return String(v);
+                                }
+                            }
+                            return String(v);
+                        }
+                    },
                     { field: "notes", title: t("whitelist.notes") },
                     { field: "added_date", title: t("whitelist.added_date") },
                     {

@@ -34,10 +34,10 @@ var CSV_COLUMN_MAP = {
 };
 
 /**
- * Same first 9 columns as Devices tab exportDeviceTableCsv (kismet.ui.js); then whitelist-only fields.
- * Import accepts 9-column main CSV, 11-column whitelist export, or legacy mac,name,category,notes,added_date.
+ * Fallback device CSV headers when kismet_ui is not yet available (matches pre-2026 compact export).
+ * Live exports use kismet_ui.getDeviceExportCsvDeviceColumnHeaders() + wireshark + whitelist columns.
  */
-var WHITELIST_DEVICE_CSV_HEADERS = [
+var WHITELIST_DEVICE_CSV_HEADERS_LEGACY = [
     "kismet.device.base.key",
     "wlan.sa (IEEE 802.11 MAC)",
     "kismet.device.base.type",
@@ -45,11 +45,22 @@ var WHITELIST_DEVICE_CSV_HEADERS = [
     "last_signal_dbm",
     "kismet.device.base.channel",
     "kismet.device.base.manuf",
-    "kismet.device.base.last_time (unix)",
-    "wireshark.display_filter",
-    "added_date",
-    "whitelist_notes"
+    "kismet.device.base.last_time (unix)"
 ];
+
+var WHITELIST_LAST_TIME_HEADER = "kismet.device.base.last_time";
+
+function stripCsvCapturedSuffixFromLastTime(val) {
+    var s = String(val == null ? "" : val).trim();
+    if (!s) {
+        return "";
+    }
+    var m = s.match(/^(.+)\s+\((\d{4}-\d{2}-\d{2}T[\d:.Z+-]+)\)\s*$/);
+    if (m) {
+        return m[1].trim();
+    }
+    return s;
+}
 
 function csvQuoteCell(val) {
     var s = (val === undefined || val === null) ? "" : String(val);
@@ -84,7 +95,8 @@ function csvFieldListHas(fields, needle) {
 }
 
 function isMainDeviceCsvFormat(fields) {
-    return csvFieldListHas(fields, "wlan.sa (IEEE 802.11 MAC)");
+    return csvFieldListHas(fields, "wlan.sa (IEEE 802.11 MAC)") ||
+        csvFieldListHas(fields, "kismet.device.base.macaddr");
 }
 
 function isLegacyWhitelistCsvFormat(fields) {
@@ -121,16 +133,22 @@ function buildEntryFromMainStyleRow(row) {
     var macRaw = rowField(row, "wlan.sa (IEEE 802.11 MAC)") ||
         rowField(row, "kismet.device.base.macaddr") ||
         rowField(row, "mac");
-    var name = rowField(row, "kismet.device.base.name") || rowField(row, "name");
+    var name = rowField(row, "kismet.device.base.commonname") ||
+        rowField(row, "kismet.device.base.name") ||
+        rowField(row, "name");
     var category = rowField(row, "kismet.device.base.manuf") || rowField(row, "category");
     var notes = rowField(row, "whitelist_notes") || rowField(row, "notes");
     var added_date = rowField(row, "added_date");
+    var ltRaw = rowField(row, WHITELIST_LAST_TIME_HEADER) ||
+        rowField(row, "kismet.device.base.last_time (unix)");
+    var last_seen_unix = stripCsvCapturedSuffixFromLastTime(ltRaw);
     return {
         mac: macRaw,
         name: name,
         category: category,
         notes: notes,
-        added_date: added_date
+        added_date: added_date,
+        last_seen_unix: last_seen_unix
     };
 }
 
@@ -276,7 +294,9 @@ exports.addToWhitelist = function (entry) {
         name: entry.name || "",
         category: entry.category || "",
         notes: entry.notes || "",
-        added_date: entry.added_date || new Date().toISOString().slice(0, 10)
+        added_date: entry.added_date || new Date().toISOString().slice(0, 10),
+        last_seen_unix: (entry.last_seen_unix != null && String(entry.last_seen_unix).trim() !== "") ?
+            String(entry.last_seen_unix).trim() : ""
     };
     list.push(row);
     saveStorage(list);
@@ -309,6 +329,7 @@ exports.updateWhitelistEntry = function (mac, updates) {
             if (updates.name != null) list[i].name = updates.name;
             if (updates.category != null) list[i].category = updates.category;
             if (updates.notes != null) list[i].notes = updates.notes;
+            if (updates.last_seen_unix != null) list[i].last_seen_unix = updates.last_seen_unix;
             saveStorage(list);
             trySyncTags(list[i]);
             return list[i];
@@ -377,7 +398,8 @@ exports.importFromCSV = function (csvString) {
                 name: entry.name,
                 category: entry.category,
                 notes: entry.notes,
-                added_date: entry.added_date
+                added_date: entry.added_date,
+                last_seen_unix: entry.last_seen_unix
             });
             success++;
         } catch (e) {
@@ -387,31 +409,56 @@ exports.importFromCSV = function (csvString) {
     return { success: success, errors: errors };
 };
 
+function whitelistBuildCsvDataLine(e, devHeaders, capIso) {
+    var macLower = String(e.mac || "").toLowerCase();
+    var wdf = "";
+    if (macLower && /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/.test(macLower)) {
+        wdf = "wlan.addr == " + macLower;
+    }
+    var lastBase = (e.last_seen_unix != null && String(e.last_seen_unix).trim() !== "") ?
+        String(e.last_seen_unix).trim() : "";
+    var lastCell = lastBase ? (lastBase + " (" + capIso + ")") : ("(" + capIso + ")");
+    var cells = [];
+    var hi;
+    for (hi = 0; hi < devHeaders.length; hi++) {
+        var hn = devHeaders[hi];
+        var cell = "";
+        if (hn === "kismet.device.base.macaddr" || hn === "wlan.sa (IEEE 802.11 MAC)") {
+            cell = macLower;
+        } else if (hn === "kismet.device.base.name" || hn === "kismet.device.base.commonname") {
+            cell = e.name || "";
+        } else if (hn === "kismet.device.base.manuf") {
+            cell = e.category || "";
+        } else if (hn === WHITELIST_LAST_TIME_HEADER || hn === "kismet.device.base.last_time (unix)") {
+            cell = lastCell;
+        } else {
+            cell = "";
+        }
+        cells.push(csvQuoteCell(cell));
+    }
+    cells.push(csvQuoteCell(wdf));
+    cells.push(csvQuoteCell(e.added_date || ""));
+    cells.push(csvQuoteCell(e.notes || ""));
+    return cells.join(",");
+}
+
 exports.exportToCSV = function () {
     var list = loadStorage();
     var BOM = "\uFEFF";
-    var lines = [WHITELIST_DEVICE_CSV_HEADERS.map(csvQuoteCell).join(",")];
-    for (var i = 0; i < list.length; i++) {
-        var e = list[i];
-        var macLower = String(e.mac || "").toLowerCase();
-        var wdf = "";
-        if (macLower && /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/.test(macLower)) {
-            wdf = "wlan.addr == " + macLower;
-        }
-        var row = [
-            "",
-            macLower,
-            "",
-            e.name || "",
-            "",
-            "",
-            e.category || "",
-            "",
-            wdf,
-            e.added_date || "",
-            e.notes || ""
-        ];
-        lines.push(row.map(csvQuoteCell).join(","));
+    var capIso = new Date().toISOString();
+    var devHeaders;
+    if (typeof kismet_ui !== "undefined" && typeof kismet_ui.getDeviceExportCsvDeviceColumnHeaders === "function") {
+        devHeaders = kismet_ui.getDeviceExportCsvDeviceColumnHeaders();
+    } else {
+        devHeaders = WHITELIST_DEVICE_CSV_HEADERS_LEGACY.slice();
+    }
+    var wireName = (typeof kismet_ui !== "undefined" && typeof kismet_ui.getDeviceExportCsvWiresharkHeaderName === "function") ?
+        kismet_ui.getDeviceExportCsvWiresharkHeaderName() : "wireshark.display_filter";
+    var hdr = devHeaders.concat([wireName, "whitelist_added_date", "whitelist_notes"]);
+    var lines = [hdr.map(csvQuoteCell).join(",")];
+    var i;
+    for (i = 0; i < list.length; i++) {
+        lines.push(whitelistBuildCsvDataLine(list[i], devHeaders, capIso));
     }
     return BOM + lines.join("\r\n");
 };

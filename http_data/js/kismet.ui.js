@@ -1401,12 +1401,16 @@ function deviceRowToWhitelistEntry(rowData) {
     if (!mac) {
         return null;
     }
-    var displayName = (od["kismet.device.base.name"] || od["kismet.device.base.manuf"] || mac || "").toString();
+    var nm = (od["kismet.device.base.name"] || od["kismet.device.base.commonname"] || "").toString().trim();
+    var manuf = (od["kismet.device.base.manuf"] || "").toString().trim();
+    var displayName = nm || manuf || mac;
+    var lt = od["kismet.device.base.last_time"];
     return {
         mac: mac,
-        name: displayName,
-        category: "other",
-        notes: "device-list"
+        name: nm || displayName,
+        category: manuf || "other",
+        notes: "device-list",
+        last_seen_unix: (lt !== undefined && lt !== null) ? String(lt) : ""
     };
 }
 
@@ -1671,6 +1675,93 @@ function csvQuoteCell(val) {
     return '"' + s.replace(/"/g, '""') + '"';
 }
 
+/** Stable CSV header = primary Kismet field path (matches server JSON keys). */
+function deviceColumnCsvHeaderName(c) {
+    if (!c) {
+        return 'unknown';
+    }
+    if (typeof c.field === 'string') {
+        return c.field;
+    }
+    if (Array.isArray(c.field)) {
+        return String(c.field[0] || c.kismetId || 'column');
+    }
+    return String(c.kismetId || 'column');
+}
+
+function deviceExportCellRawForCsv(row, c) {
+    var od = (row && row.original_data) ? row.original_data : {};
+    if (!c) {
+        return '';
+    }
+    if (typeof c.field === 'string') {
+        var v = od[c.field];
+        var fs = c.field.split('/');
+        var fn = fs[fs.length - 1];
+        if ((v === undefined || v === null) && fn in od) {
+            v = od[fn];
+        }
+        if ((v === undefined || v === null) && row && row[c.kismetId] !== undefined) {
+            v = row[c.kismetId];
+        }
+        if (v === undefined || v === null) {
+            return '';
+        }
+        if (typeof v === 'object') {
+            try {
+                return JSON.stringify(v);
+            } catch (ej) {
+                return String(v);
+            }
+        }
+        return v;
+    }
+    if (Array.isArray(c.field)) {
+        var v2 = od[c.field[1]];
+        if ((v2 === undefined || v2 === null) && row && row[c.kismetId] !== undefined) {
+            v2 = row[c.kismetId];
+        }
+        if (v2 === undefined || v2 === null) {
+            return '';
+        }
+        if (typeof v2 === 'object') {
+            try {
+                return JSON.stringify(v2);
+            } catch (ej2) {
+                return String(v2);
+            }
+        }
+        return v2;
+    }
+    return '';
+}
+
+function deviceExportWiresharkFilterFromRow(row) {
+    var od = row && row.original_data ? row.original_data : {};
+    var mac = (od['kismet.device.base.macaddr'] || '').toString().toLowerCase();
+    if (mac && /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i.test(mac)) {
+        return 'wlan.addr == ' + mac;
+    }
+    return '';
+}
+
+exports.getDeviceExportCsvDeviceColumnHeaders = function () {
+    var h = [];
+    for (const [k, c] of device_columnlist2) {
+        h.push(deviceColumnCsvHeaderName(c));
+    }
+    return h;
+};
+
+exports.getDeviceExportCsvWiresharkHeaderName = function () {
+    return 'wireshark.display_filter';
+};
+
+exports.getDeviceExportCsvCaptureHeaderName = function () {
+    return (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ?
+        kismet_i18n.t('device_list.csv_export_captured_at') : 'csv_export_captured_at';
+};
+
 function exportDeviceTableCsv() {
     if (!deviceTabulator) {
         return;
@@ -1681,50 +1772,26 @@ function exportDeviceTableCsv() {
         try { alert(em); } catch (e) { }
         return;
     }
-    var hdr = [
-        'kismet.device.base.key',
-        'wlan.sa (IEEE 802.11 MAC)',
-        'kismet.device.base.type',
-        'kismet.device.base.name',
-        'last_signal_dbm',
-        'kismet.device.base.channel',
-        'kismet.device.base.manuf',
-        'kismet.device.base.last_time (unix)',
-        'wireshark.display_filter'
-    ];
+    var colList = [];
+    for (const [k, c] of device_columnlist2) {
+        colList.push(c);
+    }
+    var capIso = new Date().toISOString();
+    var capHdr = exports.getDeviceExportCsvCaptureHeaderName();
+    var wireHdr = exports.getDeviceExportCsvWiresharkHeaderName();
+    var hdr = exports.getDeviceExportCsvDeviceColumnHeaders().concat([wireHdr, capHdr]);
     var lines = [hdr.map(csvQuoteCell).join(',')];
-    for (var i = 0; i < rows.length; i++) {
-        var r = rows[i];
-        var od = r.original_data || {};
-        var mac = (od['kismet.device.base.macaddr'] || '').toString().toLowerCase();
-        var key = (r.device_key || od['kismet.device.base.key'] || '').toString();
-        var typ = (od['kismet.device.base.type'] || '').toString();
-        var nm = (od['kismet.device.base.name'] || '').toString();
-        var sig = deviceRowLastSignalDbm(r);
-        if (sig === null || isNaN(sig))
-            sig = '';
-        var ch = od['kismet.device.base.channel'];
-        if (ch === undefined || ch === null)
-            ch = '';
-        var man = (od['kismet.device.base.manuf'] || '').toString();
-        var lt = od['kismet.device.base.last_time'];
-        if (lt === undefined || lt === null)
-            lt = '';
-        var wdf = '';
-        if (mac && /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i.test(mac)) {
-            wdf = 'wlan.addr == ' + mac;
+    var ri;
+    for (ri = 0; ri < rows.length; ri++) {
+        var r = rows[ri];
+        var cells = [];
+        var ci;
+        for (ci = 0; ci < colList.length; ci++) {
+            cells.push(csvQuoteCell(deviceExportCellRawForCsv(r, colList[ci])));
         }
-        lines.push([
-            csvQuoteCell(key),
-            csvQuoteCell(mac),
-            csvQuoteCell(typ),
-            csvQuoteCell(nm),
-            csvQuoteCell(sig),
-            csvQuoteCell(ch),
-            csvQuoteCell(man),
-            csvQuoteCell(lt),
-            csvQuoteCell(wdf)
-        ].join(','));
+        cells.push(csvQuoteCell(deviceExportWiresharkFilterFromRow(r)));
+        cells.push(csvQuoteCell(capIso));
+        lines.push(cells.join(','));
     }
     var bom = '\uFEFF';
     var blob = new Blob([bom + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
