@@ -82,6 +82,22 @@ sudo kismet
 - このフォークの本体では、**カレントディレクトリに `http_data/index.html` があると、その UI を優先**します（パッケージに入っている古い `httpd` より先）。起動ログに **`http_data next to working directory`** や **`takes precedence`** と出ていれば、そのモードです。  
 - ブラウザは **強制再読み込み**（キャッシュ無効）を推奨します。
 
+### ターミナルなしで起動したい場合（Linux・初心者向け）
+
+リポジトリに **GUI から権限を昇格して** Wi-Fi をモニターモードにし、`kismet` を起動し、数秒後に **ブラウザで UI** を開くスクリプトを置いています。
+
+| ファイル | 役割 |
+|----------|------|
+| [`scripts/kismet-gui-launch.sh`](scripts/kismet-gui-launch.sh) | 本体（`pkexec` で管理者実行 → 任意で `iw` モニター → `kismet` → `xdg-open`） |
+| [`scripts/kismet-gui-launch.desktop`](scripts/kismet-gui-launch.desktop) | ダブルクリック用（`Terminal=false`）。`Path=..` で clone 直下を作業フォルダにします |
+
+**使い方（例）**
+
+1. ファイルマネージャで `scripts/kismet-gui-launch.desktop` を **ダブルクリック**するか、アプリ一覧に出したいときは `~/.local/share/applications/` に **コピー**する。  
+2. 初回は **polkit（管理者パスワード）** のダイアログだけ出ます（ターミナルは不要）。  
+3. 無線 IF が複数ある・モニターにしたくない場合は環境変数 `KISMET_WIFI_INTERFACE` / `KISMET_SKIP_MONITOR=1` を `.desktop` の `Exec` 前に `env` で付けるなどして調整。  
+4. **Windows 本機の Wi-Fi** をこのスクリプトでモニターにする想定ではありません（Linux/Kali 向け）。
+
 **注意:** `sudo` だけ実行して **カレントが `/root` など**だと、上の「優先」に引っかからないことがあります。そのときは **`cd` してから `sudo kismet`** にするか、`sudo sh -c 'cd /home/あなたのユーザー/kismet-enhanced/kismet && kismet'` のように **作業ディレクトリを clone 側に合わせて**ください。
 
 ---

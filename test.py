@@ -24,6 +24,8 @@ class TestFileExistence(unittest.TestCase):
         "http_data/js/kismet_ui_enhanced.js",
         "http_data/js/kismet_ui_treeview.js",
         "http_data/js/kismet_enhanced_loader.js",
+        "scripts/kismet-gui-launch.sh",
+        "scripts/kismet-gui-launch.desktop",
         "http_data/css/kismet_enhanced.css",
         "http_data/locales/en/translation.json",
         "http_data/locales/ja/translation.json",

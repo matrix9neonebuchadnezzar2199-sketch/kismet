@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Kismet (拡張UI・ブラウザ)
+Name[en]=Kismet (enhanced UI + browser)
+Comment=モニターモード→Kismet起動→ブラウザ（管理者はGUIで承認）。このファイルは scripts/ 内のままダブルクリックするか、~/.local/share/applications/ にコピーして使えます。
+Comment[en]=Monitor mode, Kismet, browser (polkit). Double-click here or copy to ~/.local/share/applications/
+# Path is relative to this .desktop file's directory → clone root (parent of scripts/)
+Path=..
+Exec=/bin/bash scripts/kismet-gui-launch.sh
+Icon=network-wireless
+Terminal=false
+Categories=Network;Monitor;HamRadio;
+Keywords=kismet;wifi;802.11;
