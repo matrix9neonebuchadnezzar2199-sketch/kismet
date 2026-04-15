@@ -1410,7 +1410,8 @@ function deviceRowToWhitelistEntry(rowData) {
         name: nm || displayName,
         category: manuf || "other",
         notes: "device-list",
-        last_seen_unix: (lt !== undefined && lt !== null) ? String(lt) : ""
+        last_seen_unix: (lt !== undefined && lt !== null) ? String(lt) : "",
+        capture_location: ""
     };
 }
 
@@ -1762,6 +1763,21 @@ exports.getDeviceExportCsvCaptureHeaderName = function () {
         kismet_i18n.t('device_list.csv_export_captured_at') : 'csv_export_captured_at';
 };
 
+function csvExportLocationHeaderName() {
+    if (typeof kismet_whitelist_api !== 'undefined' && kismet_whitelist_api.CSV_CAPTURE_LOCATION_HEADER) {
+        return kismet_whitelist_api.CSV_CAPTURE_LOCATION_HEADER;
+    }
+    return '\u5834\u6240';
+}
+
+function sanitizeCsvExportLocationForFilename(loc) {
+    var s = String(loc || '').trim();
+    if (!s) {
+        return '';
+    }
+    return s.replace(/[\\/:*?"<>|\r\n\t]/g, '_').replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+
 function exportDeviceTableCsv() {
     if (!deviceTabulator) {
         return;
@@ -1772,6 +1788,20 @@ function exportDeviceTableCsv() {
         try { alert(em); } catch (e) { }
         return;
     }
+    var promptMsg = (typeof kismet_i18n !== 'undefined' && kismet_i18n.t) ?
+        kismet_i18n.t('device_list.csv_export_location_prompt') :
+        'Optional capture location for this export. Leave empty to omit the location column. Cancel aborts export.';
+    var locInput;
+    try {
+        locInput = window.prompt(promptMsg, '');
+    } catch (ePrompt) {
+        locInput = '';
+    }
+    if (locInput === null) {
+        return;
+    }
+    var locTrim = String(locInput).trim();
+    var locHdr = csvExportLocationHeaderName();
     var colList = [];
     for (const [k, c] of device_columnlist2) {
         colList.push(c);
@@ -1780,6 +1810,9 @@ function exportDeviceTableCsv() {
     var capHdr = exports.getDeviceExportCsvCaptureHeaderName();
     var wireHdr = exports.getDeviceExportCsvWiresharkHeaderName();
     var hdr = exports.getDeviceExportCsvDeviceColumnHeaders().concat([wireHdr, capHdr]);
+    if (locTrim) {
+        hdr.push(locHdr);
+    }
     var lines = [hdr.map(csvQuoteCell).join(',')];
     var ri;
     for (ri = 0; ri < rows.length; ri++) {
@@ -1791,6 +1824,9 @@ function exportDeviceTableCsv() {
         }
         cells.push(csvQuoteCell(deviceExportWiresharkFilterFromRow(r)));
         cells.push(csvQuoteCell(capIso));
+        if (locTrim) {
+            cells.push(csvQuoteCell(locTrim));
+        }
         lines.push(cells.join(','));
     }
     var bom = '\uFEFF';
@@ -1798,7 +1834,14 @@ function exportDeviceTableCsv() {
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     var ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    a.download = 'kismet_device_export_' + ts + '.csv';
+    var fnBody = ts;
+    if (locTrim) {
+        var safeLoc = sanitizeCsvExportLocationForFilename(locTrim);
+        if (safeLoc) {
+            fnBody = ts + ' (' + safeLoc + ')';
+        }
+    }
+    a.download = 'kismet_device_export_' + fnBody + '.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

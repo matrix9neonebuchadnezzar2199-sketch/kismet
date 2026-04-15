@@ -13,6 +13,10 @@
 
 var exports = {};
 
+/** Exact UTF-8 CSV column name for capture site; keep in sync with device list export. */
+var CSV_CAPTURE_LOCATION_HEADER = "\u5834\u6240";
+exports.CSV_CAPTURE_LOCATION_HEADER = CSV_CAPTURE_LOCATION_HEADER;
+
 var STORAGE_KEY = "kismet.whitelist.devices";
 var whitelistMacSet = new Set();
 
@@ -142,13 +146,16 @@ function buildEntryFromMainStyleRow(row) {
     var ltRaw = rowField(row, WHITELIST_LAST_TIME_HEADER) ||
         rowField(row, "kismet.device.base.last_time (unix)");
     var last_seen_unix = stripCsvCapturedSuffixFromLastTime(ltRaw);
+    var capture_location = rowField(row, CSV_CAPTURE_LOCATION_HEADER) ||
+        rowField(row, "capture_location");
     return {
         mac: macRaw,
         name: name,
         category: category,
         notes: notes,
         added_date: added_date,
-        last_seen_unix: last_seen_unix
+        last_seen_unix: last_seen_unix,
+        capture_location: capture_location
     };
 }
 
@@ -296,7 +303,9 @@ exports.addToWhitelist = function (entry) {
         notes: entry.notes || "",
         added_date: entry.added_date || new Date().toISOString().slice(0, 10),
         last_seen_unix: (entry.last_seen_unix != null && String(entry.last_seen_unix).trim() !== "") ?
-            String(entry.last_seen_unix).trim() : ""
+            String(entry.last_seen_unix).trim() : "",
+        capture_location: (entry.capture_location != null && String(entry.capture_location).trim() !== "") ?
+            String(entry.capture_location).trim() : ""
     };
     list.push(row);
     saveStorage(list);
@@ -330,6 +339,9 @@ exports.updateWhitelistEntry = function (mac, updates) {
             if (updates.category != null) list[i].category = updates.category;
             if (updates.notes != null) list[i].notes = updates.notes;
             if (updates.last_seen_unix != null) list[i].last_seen_unix = updates.last_seen_unix;
+            if (updates.capture_location != null) {
+                list[i].capture_location = String(updates.capture_location).trim();
+            }
             saveStorage(list);
             trySyncTags(list[i]);
             return list[i];
@@ -399,7 +411,8 @@ exports.importFromCSV = function (csvString) {
                 category: entry.category,
                 notes: entry.notes,
                 added_date: entry.added_date,
-                last_seen_unix: entry.last_seen_unix
+                last_seen_unix: entry.last_seen_unix,
+                capture_location: entry.capture_location
             });
             success++;
         } catch (e) {
@@ -439,6 +452,7 @@ function whitelistBuildCsvDataLine(e, devHeaders, capIso) {
     cells.push(csvQuoteCell(wdf));
     cells.push(csvQuoteCell(e.added_date || ""));
     cells.push(csvQuoteCell(e.notes || ""));
+    cells.push(csvQuoteCell(e.capture_location || ""));
     return cells.join(",");
 }
 
@@ -454,7 +468,7 @@ exports.exportToCSV = function () {
     }
     var wireName = (typeof kismet_ui !== "undefined" && typeof kismet_ui.getDeviceExportCsvWiresharkHeaderName === "function") ?
         kismet_ui.getDeviceExportCsvWiresharkHeaderName() : "wireshark.display_filter";
-    var hdr = devHeaders.concat([wireName, "whitelist_added_date", "whitelist_notes"]);
+    var hdr = devHeaders.concat([wireName, "whitelist_added_date", "whitelist_notes", CSV_CAPTURE_LOCATION_HEADER]);
     var lines = [hdr.map(csvQuoteCell).join(",")];
     var i;
     for (i = 0; i < list.length; i++) {

@@ -58,6 +58,9 @@
     "export_csv_hint": "表示中の行を UTF-8（BOM付き）CSVで保存します。RFC 4180形式。wireshark.display_filter は802.11キャプチャ向け表示フィルタ用です（バイナリPCAPNGではありません）。",
     "csv_empty": "書き出す行がありません。フィルタを確認してください。",
     "csv_export_captured_at": "取得日時 (UTC)",
+    "csv_export_location_prompt": "取得場所（任意）。空白のまま OK なら従来どおり「場所」列は付きません。ファイル名も日時のみです。キャンセルで書き出し中止。",
+    "csv_location": "場所",
+    "csv_location_placeholder": "例: 拠点名、フロア、部屋番号",
     "wl_select_page": "このページを全選択",
     "wl_bulk_done": "ホワイトリスト: 追加 {{added}} 件、スキップ {{skipped}} 件（重複または無効なMAC）。"
   },

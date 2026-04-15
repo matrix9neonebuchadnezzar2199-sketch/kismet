@@ -407,7 +407,8 @@ function OpenWhitelistPanel() {
         var term = $(this).val().toLowerCase();
         tabulator.setFilter(function (data) {
             if (!term) return true;
-            return String(data.mac + data.name + data.category + data.notes + (data.last_seen_unix || ""))
+            return String(data.mac + data.name + data.category + data.notes + (data.last_seen_unix || "") +
+                (data.capture_location || ""))
                 .toLowerCase().indexOf(term) >= 0;
         });
     });
@@ -583,6 +584,7 @@ function OpenWhitelistPanel() {
                             return String(v);
                         }
                     },
+                    { field: "capture_location", title: t("device_list.csv_location") },
                     { field: "notes", title: t("whitelist.notes") },
                     { field: "added_date", title: t("whitelist.added_date") },
                     {
@@ -688,12 +690,18 @@ function openEditDialog(existing) {
     }).val(existing ? existing.name : "");
     nameInput.attr("autocomplete", "off");
     var catSel = buildCategorySelect(existing ? existing.category : "pc", "wl-cat-" + suf);
+    var locInput = $("<input>", {
+        type: "text",
+        id: "wl-loc-" + suf,
+        placeholder: t("device_list.csv_location_placeholder")
+    }).val(existing && existing.capture_location ? existing.capture_location : "");
+    locInput.attr("autocomplete", "off");
     var notes = $("<textarea>", {
         id: "wl-notes-" + suf,
         rows: 4,
         placeholder: t("whitelist.notes_placeholder")
     }).val(existing ? existing.notes : "");
-    [macInput, nameInput, catSel, notes].forEach(function (ctrl) {
+    [macInput, nameInput, catSel, locInput, notes].forEach(function (ctrl) {
         wlModalStyleImportant(ctrl, "background-color", "#ffffff");
         wlModalStyleImportant(ctrl, "color", "#212121");
         wlModalStyleImportant(ctrl, "border", "1px solid #bdbdbd");
@@ -703,6 +711,7 @@ function openEditDialog(existing) {
     appendFieldRow(box, "whitelist.mac_address", macInput);
     appendFieldRow(box, "whitelist.device_name", nameInput);
     appendFieldRow(box, "whitelist.category", catSel);
+    appendFieldRow(box, "device_list.csv_location", locInput);
     appendFieldRow(box, "whitelist.notes", notes);
     showModal(existing ? t("whitelist.edit_title") : t("whitelist.add_title"), box, function (done) {
         var macNorm = String(macInput.val() || "").trim().toUpperCase().replace(/-/g, ":");
@@ -715,14 +724,16 @@ function openEditDialog(existing) {
                 kismet_whitelist_api.updateWhitelistEntry(macNorm, {
                     name: nameInput.val(),
                     category: catSel.val(),
-                    notes: notes.val()
+                    notes: notes.val(),
+                    capture_location: String(locInput.val() || "").trim()
                 });
             } else {
                 kismet_whitelist_api.addToWhitelist({
                     mac: macNorm,
                     name: nameInput.val(),
                     category: catSel.val(),
-                    notes: notes.val()
+                    notes: notes.val(),
+                    capture_location: String(locInput.val() || "").trim()
                 });
             }
         } catch (e) {

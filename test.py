@@ -469,6 +469,8 @@ class TestWhitelistLogic(unittest.TestCase):
             "メイン一覧と揃えたホワイトリストCSVヘッダ（フォールバック）定義があること")
         self.assertIn("wlan.sa (IEEE 802.11 MAC)", content,
             "DevicesタブCSVと同じMAC列名があること")
+        self.assertIn("CSV_CAPTURE_LOCATION_HEADER", content,
+            "デバイスCSVの場所列とホワイトリスト取込で共有するヘッダ定義があること")
 
 
 class TestIntegration(unittest.TestCase):
