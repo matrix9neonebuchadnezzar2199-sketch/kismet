@@ -16,7 +16,18 @@
     "download_pcap": "Pcap-NG ダウンロード",
     "packet_rates": "パケットレート",
     "thermals": "サーマル",
-    "radiation": "放射線"
+    "radiation": "放射線",
+    "tree_view": "ツリー表示"
+  },
+  "treeview": {
+    "title": "ツリー表示",
+    "band_mode": "バンド区切り",
+    "simple_mode": "単純ツリー",
+    "unassociated": "未接続クライアント",
+    "clients": "接続数",
+    "monitor": "\u25b6 監視",
+    "no_ssid": "(SSID非公開)",
+    "unknown_band": "不明"
   },
   "device_list": {
     "name": "デバイス名",

@@ -16,7 +16,18 @@
     "download_pcap": "Download Pcap-NG",
     "packet_rates": "Packet Rates",
     "thermals": "Thermals",
-    "radiation": "Radiation"
+    "radiation": "Radiation",
+    "tree_view": "Tree View"
+  },
+  "treeview": {
+    "title": "Tree View",
+    "band_mode": "Band Groups",
+    "simple_mode": "Simple Tree",
+    "unassociated": "Unassociated Clients",
+    "clients": "Clients",
+    "monitor": "\u25b6 Monitor",
+    "no_ssid": "(Hidden SSID)",
+    "unknown_band": "Unknown"
   },
   "device_list": {
     "name": "Device Name",

@@ -416,3 +416,151 @@
     padding-top: 14px;
     border-top: 1px solid #e8e8e8;
 }
+
+/* Tree view (AP / client hierarchy) */
+.treeview-panel-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    color: #e8e8e8;
+}
+
+.treeview-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.treeview-toolbar .tree-mode-btn.active {
+    background: #3949ab;
+    color: #fff;
+    border-color: #5c6bc0;
+}
+
+.treeview-status {
+    margin-left: auto;
+    font-size: 12px;
+    opacity: 0.85;
+}
+
+.tree-scroll-host {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 4px 0;
+}
+
+.tree-container {
+    padding-bottom: 12px;
+}
+
+.tree-band-header {
+    background: #2a2a3e;
+    color: #fff;
+    padding: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    border-bottom: 1px solid #444;
+}
+
+.tree-unassoc-header {
+    margin-top: 8px;
+}
+
+.tree-band-body {
+    border-left: 2px solid #3d3d55;
+    margin-left: 4px;
+}
+
+.tree-ap {
+    background: #1e1e2e;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.tree-ap:hover,
+.tree-client:hover {
+    background: #333355;
+}
+
+.tree-ap-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.tree-mac,
+.tree-meta {
+    opacity: 0.9;
+    font-size: 12px;
+}
+
+.tree-ap-children {
+    border-left: 2px solid #444;
+    margin-left: 18px;
+}
+
+.tree-client {
+    background: #252535;
+    padding: 4px 8px 4px 30px;
+    border-bottom: 1px solid #2a2a2a;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tree-toggle {
+    margin-right: 6px;
+    display: inline-block;
+    width: 16px;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.tree-btn-monitor {
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    background: #3498db;
+    color: #fff;
+    border: none;
+}
+
+.tree-btn-monitor:hover {
+    background: #2980b9;
+}
+
+.tree-simple-unassoc-sep {
+    padding: 10px 8px 6px;
+    font-weight: bold;
+    color: #aaa;
+    border-top: 1px solid #444;
+    margin-top: 8px;
+}
+
+.tree-error {
+    padding: 12px;
+    color: #f44336;
+}
+
+.signal-green {
+    color: #4caf50;
+}
+
+.signal-yellow {
+    color: #ff9800;
+}
+
+.signal-red {
+    color: #f44336;
+}

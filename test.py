@@ -22,6 +22,7 @@ class TestFileExistence(unittest.TestCase):
         "http_data/js/kismet_ui_signal_monitor.js",
         "http_data/js/kismet_ui_export.js",
         "http_data/js/kismet_ui_enhanced.js",
+        "http_data/js/kismet_ui_treeview.js",
         "http_data/js/kismet_enhanced_loader.js",
         "http_data/css/kismet_enhanced.css",
         "http_data/locales/en/translation.json",
@@ -122,7 +123,7 @@ class TestTranslationFiles(unittest.TestCase):
         """必須キーが存在するか"""
         required = [
             'sidebar.devices', 'sidebar.unassociated_clients',
-            'sidebar.whitelist_manage', 'sidebar.settings',
+            'sidebar.tree_view', 'sidebar.whitelist_manage', 'sidebar.settings',
             'device_list.mac_address', 'device_list.signal',
             'device_list.channel', 'device_list.last_seen',
             'whitelist.title', 'whitelist.add', 'whitelist.import_csv',
@@ -135,6 +136,9 @@ class TestTranslationFiles(unittest.TestCase):
             'signal_filter.above_60', 'signal_filter.show_all',
             'highlight.whitelisted_trusted', 'highlight.whitelisted_trusted_desc',
             'signal_monitor.title', 'signal_monitor.csv_save',
+            'treeview.title', 'treeview.band_mode', 'treeview.simple_mode',
+            'treeview.unassociated', 'treeview.clients', 'treeview.monitor',
+            'treeview.no_ssid', 'treeview.unknown_band',
             'export.csv', 'export.pdf',
             'common.ok', 'common.cancel',
         ]
@@ -157,6 +161,7 @@ class TestJavaScriptFiles(unittest.TestCase):
         "http_data/js/kismet_ui_signal_monitor.js",
         "http_data/js/kismet_ui_export.js",
         "http_data/js/kismet_ui_enhanced.js",
+        "http_data/js/kismet_ui_treeview.js",
         "http_data/js/kismet_enhanced_loader.js",
     ]
 
@@ -473,6 +478,58 @@ class TestWhitelistLogic(unittest.TestCase):
             "デバイスCSVの場所列とホワイトリスト取込で共有するヘッダ定義があること")
 
 
+class TestTreeView(unittest.TestCase):
+    """ツリー表示モジュール (kismet_ui_treeview.js)"""
+
+    TV_PATH = BASE_DIR / "http_data/js/kismet_ui_treeview.js"
+
+    def test_treeview_file_exists(self):
+        self.assertTrue(self.TV_PATH.is_file(), "kismet_ui_treeview.js が存在すること")
+
+    def test_treeview_has_register_sidebar(self):
+        content = self.TV_PATH.read_text(encoding="utf-8")
+        self.assertIn("registerSidebar", content)
+        self.assertIn('id: "tree_view"', content)
+
+    def test_treeview_has_band_detection(self):
+        content = self.TV_PATH.read_text(encoding="utf-8")
+        self.assertIn("getBand", content)
+        self.assertIn("5925000", content)
+
+    def test_treeview_has_refresh_interval(self):
+        content = self.TV_PATH.read_text(encoding="utf-8")
+        self.assertIn("REFRESH_INTERVAL", content)
+        self.assertIn("15000", content)
+
+    def test_treeview_has_signal_monitor_integration(self):
+        content = self.TV_PATH.read_text(encoding="utf-8")
+        self.assertIn("kismet_ui_signal_monitor", content)
+        self.assertIn("OpenSignalMonitor", content)
+
+    def test_treeview_has_i18n(self):
+        content = self.TV_PATH.read_text(encoding="utf-8")
+        self.assertIn("sidebar.tree_view", content)
+        self.assertIn("treeview.", content)
+
+    def test_treeview_locale_ja_has_keys(self):
+        ja = json.loads(
+            (BASE_DIR / "http_data/locales/ja/translation.json").read_text(encoding="utf-8"))
+        tv = ja.get("treeview", {})
+        for k in ("title", "band_mode", "simple_mode", "unassociated", "clients",
+                  "monitor", "no_ssid", "unknown_band"):
+            self.assertIn(k, tv, f"ja treeview.{k}")
+        self.assertIn("tree_view", ja.get("sidebar", {}))
+
+    def test_treeview_locale_en_has_keys(self):
+        en = json.loads(
+            (BASE_DIR / "http_data/locales/en/translation.json").read_text(encoding="utf-8"))
+        tv = en.get("treeview", {})
+        for k in ("title", "band_mode", "simple_mode", "unassociated", "clients",
+                  "monitor", "no_ssid", "unknown_band"):
+            self.assertIn(k, tv, f"en treeview.{k}")
+        self.assertIn("tree_view", en.get("sidebar", {}))
+
+
 class TestIntegration(unittest.TestCase):
     """統合テスト: モジュール間の整合性"""
 
@@ -489,11 +546,13 @@ class TestIntegration(unittest.TestCase):
         # 主要キーがJS内で参照されているか
         sample_keys = [
             'sidebar.unassociated_clients',
+            'sidebar.tree_view',
             'sidebar.whitelist_manage',
             'whitelist.title',
             'whitelist.import_csv',
             'signal_filter.above_60',
             'signal_monitor.title',
+            'treeview.title',
             'export.csv',
         ]
         missing = []
@@ -524,7 +583,7 @@ class TestIntegration(unittest.TestCase):
             prefix in c for prefix in
             ['signal-filter', 'signal-bar', 'signal-monitor',
              'whitelist-', 'export-btn', 'kismet-modal',
-             'unassoc-']
+             'unassoc-', 'tree-']
         )]
         used = sum(1 for c in key_classes if c in all_js)
         self.assertTrue(used > 0,
