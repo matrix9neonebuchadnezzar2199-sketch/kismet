@@ -27,7 +27,8 @@
     "clients": "Clients",
     "monitor": "\u25b6 Monitor",
     "no_ssid": "(Hidden SSID)",
-    "unknown_band": "Unknown"
+    "unknown_band": "Unknown",
+    "status_poll": "Last poll: {{live}} devices | Session total: {{total}} (kept after drop-off)"
   },
   "device_list": {
     "name": "Device Name",

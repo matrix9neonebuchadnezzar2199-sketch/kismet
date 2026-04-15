@@ -27,7 +27,8 @@
     "clients": "接続数",
     "monitor": "\u25b6 監視",
     "no_ssid": "(SSID非公開)",
-    "unknown_band": "不明"
+    "unknown_band": "不明",
+    "status_poll": "直近取得: {{live}} 件 | セッション累計: {{total}} 件（電波から消えても一覧に保持）"
   },
   "device_list": {
     "name": "デバイス名",

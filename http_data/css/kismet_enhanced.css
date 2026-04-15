@@ -492,6 +492,27 @@
     background: #333355;
 }
 
+.tree-ap--wl,
+.tree-client--wl {
+    border-left: 3px solid #4caf50;
+}
+
+.tree-wl-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 4px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #c8e6c9;
+    background: rgba(76, 175, 80, 0.22);
+    border: 1px solid #66bb6a;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
 .tree-ap-title {
     flex: 1;
     min-width: 0;

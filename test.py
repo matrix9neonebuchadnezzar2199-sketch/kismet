@@ -138,7 +138,7 @@ class TestTranslationFiles(unittest.TestCase):
             'signal_monitor.title', 'signal_monitor.csv_save',
             'treeview.title', 'treeview.band_mode', 'treeview.simple_mode',
             'treeview.unassociated', 'treeview.clients', 'treeview.monitor',
-            'treeview.no_ssid', 'treeview.unknown_band',
+            'treeview.no_ssid', 'treeview.unknown_band', 'treeview.status_poll',
             'export.csv', 'export.pdf',
             'common.ok', 'common.cancel',
         ]
@@ -499,12 +499,23 @@ class TestTreeView(unittest.TestCase):
     def test_treeview_has_refresh_interval(self):
         content = self.TV_PATH.read_text(encoding="utf-8")
         self.assertIn("REFRESH_INTERVAL", content)
-        self.assertIn("15000", content)
+        self.assertIn("10000", content)
 
     def test_treeview_has_signal_monitor_integration(self):
         content = self.TV_PATH.read_text(encoding="utf-8")
         self.assertIn("kismet_ui_signal_monitor", content)
         self.assertIn("OpenSignalMonitor", content)
+
+    def test_treeview_merges_session_device_cache(self):
+        content = self.TV_PATH.read_text(encoding="utf-8")
+        self.assertIn("mergeTreeDevicesFromFetch", content)
+        self.assertIn("treeDeviceCache", content)
+
+    def test_treeview_whitelist_integration(self):
+        content = self.TV_PATH.read_text(encoding="utf-8")
+        self.assertIn("kismet_whitelist_api", content)
+        self.assertIn("isWhitelisted", content)
+        self.assertIn("kismet-whitelist-changed", content)
 
     def test_treeview_has_i18n(self):
         content = self.TV_PATH.read_text(encoding="utf-8")
@@ -516,7 +527,7 @@ class TestTreeView(unittest.TestCase):
             (BASE_DIR / "http_data/locales/ja/translation.json").read_text(encoding="utf-8"))
         tv = ja.get("treeview", {})
         for k in ("title", "band_mode", "simple_mode", "unassociated", "clients",
-                  "monitor", "no_ssid", "unknown_band"):
+                  "monitor", "no_ssid", "unknown_band", "status_poll"):
             self.assertIn(k, tv, f"ja treeview.{k}")
         self.assertIn("tree_view", ja.get("sidebar", {}))
 
@@ -525,7 +536,7 @@ class TestTreeView(unittest.TestCase):
             (BASE_DIR / "http_data/locales/en/translation.json").read_text(encoding="utf-8"))
         tv = en.get("treeview", {})
         for k in ("title", "band_mode", "simple_mode", "unassociated", "clients",
-                  "monitor", "no_ssid", "unknown_band"):
+                  "monitor", "no_ssid", "unknown_band", "status_poll"):
             self.assertIn(k, tv, f"en treeview.{k}")
         self.assertIn("tree_view", en.get("sidebar", {}))
 

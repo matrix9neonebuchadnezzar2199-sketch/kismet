@@ -18,7 +18,7 @@ if (typeof KISMET_URI_PREFIX !== "undefined") {
     local_uri_prefix = KISMET_URI_PREFIX;
 }
 
-var REFRESH_INTERVAL = 15000;
+var REFRESH_INTERVAL = 10000;
 var TREE_JSPANEL_REF = "__kismetTreeViewJspanel";
 
 var treePanel = null;
@@ -26,6 +26,8 @@ var treeRefreshTimer = null;
 var treeMode = "band";
 var treeContainer = null;
 var treeStatusEl = null;
+/** MAC (normalized) -> last device snapshot; entries are never removed while the tree panel is open. */
+var treeDeviceCache = null;
 
 var TREE_FIELDS = [
     "kismet.device.base.key",
@@ -295,6 +297,57 @@ function esc(s) {
         .replace(/"/g, "&quot;");
 }
 
+function resetTreeDeviceCache() {
+    treeDeviceCache = {};
+}
+
+function mergeTreeDevicesFromFetch(freshList) {
+    if (!treeDeviceCache) {
+        treeDeviceCache = {};
+    }
+    var i;
+    for (i = 0; i < freshList.length; i++) {
+        var d = freshList[i];
+        if (!d) {
+            continue;
+        }
+        var mac = normalizeMac(d["kismet.device.base.macaddr"] || "");
+        if (!mac) {
+            continue;
+        }
+        treeDeviceCache[mac] = d;
+    }
+}
+
+function getMergedDeviceList() {
+    if (!treeDeviceCache) {
+        return [];
+    }
+    var out = [];
+    var k;
+    for (k in treeDeviceCache) {
+        if (Object.prototype.hasOwnProperty.call(treeDeviceCache, k)) {
+            out.push(treeDeviceCache[k]);
+        }
+    }
+    return out;
+}
+
+function isMacWhitelisted(mac) {
+    if (typeof kismet_whitelist_api === "undefined" || !kismet_whitelist_api.isWhitelisted) {
+        return false;
+    }
+    return kismet_whitelist_api.isWhitelisted(mac);
+}
+
+function renderWhitelistBadgeHtml(mac) {
+    if (!isMacWhitelisted(mac)) {
+        return "";
+    }
+    return "<span class=\"tree-wl-badge\" title=\"" + esc(t("whitelist.safe_tag_title")) + "\">" +
+        "<i class=\"fa fa-shield\"></i> " + esc(t("whitelist.safe_tag")) + "</span>";
+}
+
 function renderMonitorBtn(dev) {
     return "<button type=\"button\" class=\"btn btn-xs tree-btn-monitor\" data-device-mac=\"" +
         esc(normalizeMac(dev["kismet.device.base.macaddr"])) + "\">" +
@@ -307,10 +360,12 @@ function renderClientRow(dev) {
     var dbm = extractDbm(dev);
     var sc = signalClass(dbm);
     var sigSpan = "<span class=\"" + esc(sc) + "\">" + esc(formatDbm(dbm)) + "</span>";
-    return $("<div>", { class: "tree-client", "data-mac": mac }).html(
+    var wl = renderWhitelistBadgeHtml(mac);
+    var rowCls = "tree-client" + (isMacWhitelisted(mac) ? " tree-client--wl" : "");
+    return $("<div>", { class: rowCls, "data-mac": mac }).html(
         "<span class=\"tree-client-label\"><i class=\"fa fa-mobile\"></i> " +
         esc(mac) + (manuf ? " (" + esc(manuf) + ")" : "") + "</span> " +
-        sigSpan + " " + renderMonitorBtn(dev)
+        wl + " " + sigSpan + " " + renderMonitorBtn(dev)
     );
 }
 
@@ -327,14 +382,17 @@ function renderApBlock(apNode, bandId) {
     var apId = (bandId ? bandId + "." : "s.") + mac;
     var apCollapsed = readCollapsed("ap", apId, false);
     var wrap = $("<div>", { class: "tree-ap-wrap", "data-ap-mac": mac });
-    var head = $("<div>", { class: "tree-ap", tabindex: 0 });
+    var apCls = "tree-ap" + (isMacWhitelisted(mac) ? " tree-ap--wl" : "");
+    var head = $("<div>", { class: apCls, tabindex: 0 });
     var toggle = $("<span>", {
         class: "tree-toggle",
         text: apCollapsed ? "\u25b6" : "\u25bc"
     });
+    var wlAp = renderWhitelistBadgeHtml(mac);
     var title = $("<span>", { class: "tree-ap-title" }).html(
         "<i class=\"fa fa-wifi\"></i> " + esc(ssid) + " <span class=\"tree-mac\">(" + esc(mac) + ")</span>" +
         " <span class=\"tree-meta\">[" + esc(t("treeview.clients")) + ": " + nChild + "]</span> " +
+        wlAp + " " +
         "<span class=\"" + esc(sc) + "\">" + esc(formatDbm(dbm)) + "</span> " +
         renderMonitorBtn(dev)
     );
@@ -472,30 +530,57 @@ function bindMonitorButtons($root, devices) {
     });
 }
 
+function renderTreeIntoContainer(model) {
+    if (!treeContainer || !treeContainer.length) {
+        return;
+    }
+    treeContainer.empty();
+    if (treeMode === "band") {
+        treeContainer.append(renderBandMode(model));
+    } else {
+        treeContainer.append(renderSimpleMode(model));
+    }
+    bindMonitorButtons(treeContainer, getMergedDeviceList());
+}
+
+function rerenderTreeFromCacheOnly() {
+    if (!treeContainer || !treeContainer.length || !treeDeviceCache) {
+        return;
+    }
+    var model = buildApClientModel(getMergedDeviceList());
+    renderTreeIntoContainer(model);
+}
+
 function refreshTreeUi() {
     if (!treeContainer || !treeContainer.length) {
         return;
     }
     fetchTreeDevices(function (err, list) {
+        var mergedLen = treeDeviceCache ? Object.keys(treeDeviceCache).length : 0;
         if (treeStatusEl && treeStatusEl.length) {
             if (err) {
                 treeStatusEl.text(String(err));
             } else {
-                treeStatusEl.text(String(list.length) + " devices");
+                treeStatusEl.text(t("treeview.status_poll", {
+                    live: list.length,
+                    total: mergedLen
+                }));
             }
         }
         if (err) {
             treeContainer.empty().append($("<div>", { class: "tree-error" }).text(String(err)));
             return;
         }
-        var model = buildApClientModel(list);
-        treeContainer.empty();
-        if (treeMode === "band") {
-            treeContainer.append(renderBandMode(model));
-        } else {
-            treeContainer.append(renderSimpleMode(model));
+        mergeTreeDevicesFromFetch(list);
+        mergedLen = Object.keys(treeDeviceCache).length;
+        if (treeStatusEl && treeStatusEl.length) {
+            treeStatusEl.text(t("treeview.status_poll", {
+                live: list.length,
+                total: mergedLen
+            }));
         }
-        bindMonitorButtons(treeContainer, list);
+        var model = buildApClientModel(getMergedDeviceList());
+        renderTreeIntoContainer(model);
     });
 }
 
@@ -509,6 +594,8 @@ function OpenTreeViewPanel() {
             /* continue */
         }
     }
+
+    resetTreeDeviceCache();
 
     var root = $("<div>", { class: "treeview-panel-root" });
     var toolbar = $("<div>", { class: "treeview-toolbar" });
@@ -544,6 +631,7 @@ function OpenTreeViewPanel() {
             if (typeof window !== "undefined") {
                 window[TREE_JSPANEL_REF] = null;
             }
+            treeDeviceCache = null;
             treePanel = null;
             treeContainer = null;
             treeStatusEl = null;
@@ -585,6 +673,21 @@ exports.registerSidebar = function () {
 
 exports.getBand = getBand;
 exports.REFRESH_INTERVAL = REFRESH_INTERVAL;
+
+var treeWhitelistListenerAttached = false;
+(function attachWhitelistTreeListener() {
+    if (typeof document === "undefined" || treeWhitelistListenerAttached) {
+        return;
+    }
+    try {
+        treeWhitelistListenerAttached = true;
+        document.addEventListener("kismet-whitelist-changed", function () {
+            rerenderTreeFromCacheOnly();
+        });
+    } catch (eAtt) {
+        treeWhitelistListenerAttached = false;
+    }
+})();
 
 return exports;
 
