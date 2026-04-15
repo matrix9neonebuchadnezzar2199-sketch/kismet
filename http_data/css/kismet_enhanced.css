@@ -459,22 +459,36 @@
     padding-bottom: 12px;
 }
 
+/* Band row: distinct from AP/client rows (darker slate) — indigo “ribbon” */
 .tree-band-header {
-    background: #2a2a3e;
-    color: #fff;
-    padding: 8px;
+    background: linear-gradient(90deg, #1a237e 0%, #283593 35%, #303f9f 100%);
+    color: #e8eaf6;
+    padding: 10px 12px 10px 10px;
     cursor: pointer;
-    font-weight: bold;
-    border-bottom: 1px solid #444;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border: 1px solid #5c6bc0;
+    border-left: 6px solid #8c9eff;
+    border-radius: 4px 4px 0 0;
+    margin: 10px 4px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.tree-band-header:hover {
+    filter: brightness(1.07);
+    border-left-color: #b3c0ff;
 }
 
 .tree-unassoc-header {
-    margin-top: 8px;
+    margin-top: 12px;
 }
 
 .tree-band-body {
-    border-left: 2px solid #3d3d55;
-    margin-left: 4px;
+    border-left: 2px solid rgba(92, 107, 192, 0.65);
+    margin: 0 4px 0 10px;
+    padding-bottom: 4px;
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 0 0 0 4px;
 }
 
 .tree-ap {
